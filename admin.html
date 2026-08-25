@@ -10,28 +10,56 @@
 <style>
   :root{
     --purple-deep:#2E1A54; --purple:#4B2A82; --purple-soft:#EFEAF7;
-    --green:#7ED321; --amber:#F5A623; --gray:#B5AEC2;
+    --green:#7ED321; --amber:#F5A623; --gray:#B5AEC2; --red:#D64545;
     --paper:#FBFAF8; --ink:#221733; --ink-soft:#6B6178; --line:#E4DEF0;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:420px;margin:0 auto;min-height:100vh;padding:28px 20px 40px;}
+  .wrap{max-width:460px;margin:0 auto;min-height:100vh;padding:24px 18px 60px;}
   h1{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0 0 4px;}
-  .sub{font-size:13px;color:var(--ink-soft);margin:0 0 24px;}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:15px;margin:28px 0 12px;}
+  .sub{font-size:13px;color:var(--ink-soft);margin:0 0 20px;}
+
   .current{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;
-    padding:16px;margin-bottom:24px;}
+    padding:14px;margin-bottom:20px;}
   .dot{width:12px;height:12px;border-radius:50%;background:var(--gray);flex-shrink:0;transition:background .3s;}
-  .current strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:15px;}
-  .current span{font-size:12px;color:var(--ink-soft);}
-  button{width:100%;padding:18px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;
-    font-weight:700;font-size:15.5px;margin-bottom:12px;cursor:pointer;transition:transform .1s;color:#fff;}
-  button:active{transform:scale(.97);}
+  .current strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:14px;}
+  .current span{font-size:11.5px;color:var(--ink-soft);}
+
+  button{border:none;border-radius:12px;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:pointer;}
+  .stand-btn{width:100%;padding:15px;font-size:14.5px;margin-bottom:10px;color:#fff;}
   .btn-disponible{background:var(--green);color:var(--purple-deep);}
   .btn-ocupado{background:var(--amber);}
   .btn-fuera{background:var(--gray);color:var(--purple-deep);}
-  .btn-auto{background:transparent;color:var(--purple);border:1.5px solid var(--purple-soft);margin-top:16px;}
+  .btn-auto{background:transparent;color:var(--purple);border:1.5px solid var(--purple-soft);width:100%;padding:13px;font-size:13.5px;margin-top:6px;}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;
+    font-size:14px;margin-bottom:10px;background:var(--paper);color:var(--ink);}
+  textarea{resize:vertical;min-height:60px;}
+  label{font-size:11.5px;color:var(--ink-soft);display:block;margin:0 0 4px;font-weight:500;}
+
+  .sku-row{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative;}
+  .sku-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .sku-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;margin-top:4px;}
+  .badge-alto{background:#FDEAEA;color:var(--red);}
+  .badge-medio{background:#FEF3E0;color:#B8720A;}
+  .badge-bajo{background:#EFEAF7;color:var(--ink-soft);}
+  .sku-remove{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;}
+
+  .add-sku{background:var(--purple-soft);color:var(--purple-deep);width:100%;padding:10px;font-size:13px;margin-bottom:14px;}
+  .save-btn{background:var(--purple-deep);color:#fff;width:100%;padding:15px;font-size:14.5px;}
+
+  .note-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;}
+  .note-item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+  .note-item strong{font-family:'Space Grotesk',sans-serif;font-size:14px;}
+  .note-item .meta{font-size:11px;color:var(--ink-soft);}
+  .note-item .nota-txt{font-size:13px;color:var(--ink);margin:6px 0;}
+  .note-item .skus{font-size:12px;color:var(--ink-soft);}
+  .note-item .skus div{padding:3px 0;border-top:1px solid var(--line);}
+
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--purple-deep);
-    color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;}
+    color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;z-index:100;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
@@ -48,10 +76,30 @@
     </div>
   </div>
 
-  <button class="btn-disponible" onclick="setEstado('disponible')">Disponible en Stand</button>
-  <button class="btn-ocupado" onclick="setEstado('ocupado')">Ocupado</button>
-  <button class="btn-fuera" onclick="setEstado('fuera')">Fuera del stand</button>
+  <button class="stand-btn btn-disponible" onclick="setEstado('disponible')">Disponible en Stand</button>
+  <button class="stand-btn btn-ocupado" onclick="setEstado('ocupado')">Ocupado</button>
+  <button class="stand-btn btn-fuera" onclick="setEstado('fuera')">Fuera del stand</button>
   <button class="btn-auto" onclick="setModoAuto()">Volver a modo automático</button>
+
+  <h2>Nueva nota de reunión</h2>
+  <div class="card">
+    <label>Cliente</label>
+    <input id="fCliente" placeholder="Nombre de la persona">
+    <label>Empresa</label>
+    <input id="fEmpresa" placeholder="Nombre del negocio">
+
+    <label style="margin-top:4px;">SKUs de interés</label>
+    <div id="skuList"></div>
+    <button class="add-sku" onclick="addSkuRow()">+ Agregar SKU</button>
+
+    <label>Nota general</label>
+    <textarea id="fNota" placeholder="Contexto de la conversación, próximos pasos, etc."></textarea>
+
+    <button class="save-btn" onclick="guardarNota()">Guardar nota</button>
+  </div>
+
+  <h2>Reuniones registradas</h2>
+  <div id="notesList"><p class="sub">Cargando…</p></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -72,10 +120,11 @@
     var t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(function(){ t.classList.remove('show'); }, 2000);
+    setTimeout(function(){ t.classList.remove('show'); }, 2200);
   }
 
-  function refresh() {
+  // ---- Estado del stand ----
+  function refreshEstado() {
     sb.from('stand_status').select('estado,modo').eq('id', 1).single().then(function(res) {
       var data = res.data;
       if (!data) return;
@@ -84,19 +133,144 @@
       document.getElementById('dot').style.background = map[data.estado] ? map[data.estado].color : '#B5AEC2';
     });
   }
-
   function setEstado(nuevo) {
     sb.from('stand_status').update({ estado: nuevo, modo: 'manual', actualizado_en: new Date().toISOString() }).eq('id', 1)
-      .then(function(){ showToast('Estado actualizado: ' + map[nuevo].label); refresh(); });
+      .then(function(){ showToast('Estado actualizado: ' + map[nuevo].label); refreshEstado(); });
   }
-
   function setModoAuto() {
     sb.from('stand_status').update({ modo: 'auto', actualizado_en: new Date().toISOString() }).eq('id', 1)
-      .then(function(){ showToast('Modo automático activado'); refresh(); });
+      .then(function(){ showToast('Modo automático activado'); refreshEstado(); });
   }
 
-  refresh();
-  setInterval(refresh, 15000);
+  // ---- Notas de reunión ----
+  function parseCLNumber(str) {
+    if (!str) return 0;
+    var clean = String(str).replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, '');
+    var n = parseFloat(clean);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function importanciaDeMonto(monto) {
+    if (monto >= 3000000) return { nivel: 'alto', label: 'ALTO', clase: 'badge-alto' };
+    if (monto >= 1000000) return { nivel: 'medio', label: 'MEDIO', clase: 'badge-medio' };
+    return { nivel: 'bajo', label: 'BAJO', clase: 'badge-bajo' };
+  }
+
+  var skuCounter = 0;
+  function addSkuRow() {
+    skuCounter++;
+    var id = 'sku' + skuCounter;
+    var div = document.createElement('div');
+    div.className = 'sku-row';
+    div.id = id;
+    div.innerHTML =
+      '<button class="sku-remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>' +
+      '<label>SKU / Producto</label>' +
+      '<input class="sku-nombre" placeholder="Ej: Camarón 36/40 Ecuatoriano crudo pelado">' +
+      '<label>Proveedor actual</label>' +
+      '<input class="sku-proveedor" placeholder="Ej: Comercial Océano">' +
+      '<div class="sku-grid">' +
+        '<div><label>Volumen (kg/mes)</label><input class="sku-volumen" type="text" inputmode="numeric" placeholder="1.500" oninput="updateBadge(\'' + id + '\')"></div>' +
+        '<div><label>Precio ($/kg neto)</label><input class="sku-precio" type="text" inputmode="numeric" placeholder="6.300" oninput="updateBadge(\'' + id + '\')"></div>' +
+      '</div>' +
+      '<div class="badge-holder"></div>';
+    document.getElementById('skuList').appendChild(div);
+  }
+
+  function updateBadge(id) {
+    var row = document.getElementById(id);
+    var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
+    var precio = parseCLNumber(row.querySelector('.sku-precio').value);
+    var monto = vol * precio;
+    var imp = importanciaDeMonto(monto);
+    var holder = row.querySelector('.badge-holder');
+    if (vol > 0 && precio > 0) {
+      holder.innerHTML = '<span class="sku-badge ' + imp.clase + '">' + imp.label + ' · $' + monto.toLocaleString('es-CL') + '/mes</span>';
+    } else {
+      holder.innerHTML = '';
+    }
+  }
+
+  addSkuRow(); // arranca con una fila lista
+
+  function guardarNota() {
+    var cliente = document.getElementById('fCliente').value.trim();
+    if (!cliente) { showToast('Falta el nombre del cliente'); return; }
+    var empresa = document.getElementById('fEmpresa').value.trim();
+    var nota = document.getElementById('fNota').value.trim();
+
+    var rows = document.querySelectorAll('.sku-row');
+    var items = [];
+    var maxMonto = 0;
+    rows.forEach(function(row) {
+      var sku = row.querySelector('.sku-nombre').value.trim();
+      if (!sku) return;
+      var proveedor = row.querySelector('.sku-proveedor').value.trim();
+      var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
+      var precio = parseCLNumber(row.querySelector('.sku-precio').value);
+      if (vol * precio > maxMonto) maxMonto = vol * precio;
+      items.push({ sku: sku, proveedor_actual: proveedor, volumen_kg: vol || null, precio_clp: precio || null });
+    });
+
+    var importancia = importanciaDeMonto(maxMonto).nivel;
+
+    sb.from('meeting_notes').insert({ cliente: cliente, empresa: empresa, nota: nota, importancia: importancia })
+      .select().single().then(function(res) {
+        if (res.error) { showToast('Error al guardar'); console.error(res.error); return; }
+        var meetingId = res.data.id;
+        if (items.length > 0) {
+          var itemsWithId = items.map(function(it) { it.meeting_id = meetingId; return it; });
+          sb.from('meeting_items').insert(itemsWithId).then(function(res2) {
+            if (res2.error) console.error(res2.error);
+            showToast('Nota guardada');
+            limpiarForm();
+            cargarNotas();
+          });
+        } else {
+          showToast('Nota guardada');
+          limpiarForm();
+          cargarNotas();
+        }
+      });
+  }
+
+  function limpiarForm() {
+    document.getElementById('fCliente').value = '';
+    document.getElementById('fEmpresa').value = '';
+    document.getElementById('fNota').value = '';
+    document.getElementById('skuList').innerHTML = '';
+    addSkuRow();
+  }
+
+  function cargarNotas() {
+    sb.from('meeting_notes').select('id,cliente,empresa,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+      .order('creado_en', { ascending: false }).limit(30).then(function(res) {
+        var list = document.getElementById('notesList');
+        if (res.error) { list.innerHTML = '<p class="sub">Error al cargar</p>'; console.error(res.error); return; }
+        var data = res.data || [];
+        if (data.length === 0) { list.innerHTML = '<p class="sub">Sin reuniones registradas todavía.</p>'; return; }
+        var impLabel = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
+        var impClase = { alto: 'badge-alto', medio: 'badge-medio', bajo: 'badge-bajo' };
+        list.innerHTML = data.map(function(n) {
+          var fecha = new Date(n.creado_en).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          var skusHtml = (n.meeting_items || []).map(function(it) {
+            var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
+            return '<div>' + it.sku + (it.proveedor_actual ? ' · hoy: ' + it.proveedor_actual : '') + (monto ? ' · ' + monto : '') + '</div>';
+          }).join('');
+          return '<div class="note-item">' +
+            '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + (n.empresa || '') + ' · ' + fecha + '</div></div>' +
+            (n.importancia ? '<span class="sku-badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '') +
+            '</div>' +
+            (n.nota ? '<div class="nota-txt">' + n.nota + '</div>' : '') +
+            (skusHtml ? '<div class="skus">' + skusHtml + '</div>' : '') +
+            '</div>';
+        }).join('');
+      });
+  }
+
+  refreshEstado();
+  setInterval(refreshEstado, 15000);
+  cargarNotas();
 </script>
 </body>
 </html>

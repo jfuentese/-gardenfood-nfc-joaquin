@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Food Service 2026 · GardenFood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-deep:#2E1A54; --purple:#4B2A82; --purple-soft:#EFEAF7;
+    --red:#D64545; --amber:#F5A623; --gray:#B5AEC2;
+    --paper:#FBFAF8; --ink:#221733; --ink-soft:#6B6178; --line:#E4DEF0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin:0 0 4px;}
+  .sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 24px;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--purple-deep);}
+  .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+
+  button{border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:pointer;
+    background:var(--purple-deep);color:#fff;padding:12px 20px;font-size:13.5px;margin-bottom:20px;}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+  th{background:var(--purple-soft);color:var(--purple-deep);font-family:'Space Grotesk',sans-serif;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;text-align:left;}
+  td{padding:10px 12px;font-size:13px;border-top:1px solid var(--line);vertical-align:top;}
+  .badge{display:inline-flex;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;}
+  .badge-alto{background:#FDEAEA;color:var(--red);}
+  .badge-medio{background:#FEF3E0;color:#B8720A;}
+  .badge-bajo{background:var(--purple-soft);color:var(--ink-soft);}
+  .skus-cell div{padding:2px 0;font-size:12px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reporte — Food Service 2026</h1>
+  <p class="sub">Registro de reuniones en stand · GardenFood</p>
+
+  <div class="stats" id="stats"></div>
+
+  <button onclick="exportarCSV()">Exportar CSV</button>
+
+  <table id="tabla">
+    <thead>
+      <tr><th>Fecha</th><th>Cliente</th><th>Empresa</th><th>Importancia</th><th>SKUs</th><th>Nota</th></tr>
+    </thead>
+    <tbody id="tbody"><tr><td colspan="6">Cargando…</td></tr></tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var impLabel = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
+  var impClase = { alto: 'badge-alto', medio: 'badge-medio', bajo: 'badge-bajo' };
+  var currentData = [];
+
+  function cargar() {
+    sb.from('meeting_notes').select('id,cliente,empresa,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+      .order('creado_en', { ascending: false }).then(function(res) {
+        if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="6">Error al cargar</td></tr>'; console.error(res.error); return; }
+        currentData = res.data || [];
+        renderStats(currentData);
+        renderTabla(currentData);
+      });
+  }
+
+  function renderStats(data) {
+    var total = data.length;
+    var altos = data.filter(function(n){ return n.importancia === 'alto'; }).length;
+    var montoTotal = 0;
+    data.forEach(function(n) {
+      (n.meeting_items || []).forEach(function(it) { montoTotal += Number(it.monto_mensual) || 0; });
+    });
+    document.getElementById('stats').innerHTML =
+      '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Reuniones registradas</div></div>' +
+      '<div class="stat"><div class="num">' + altos + '</div><div class="lbl">Prospectos ALTO interés</div></div>' +
+      '<div class="stat"><div class="num">$' + montoTotal.toLocaleString('es-CL') + '</div><div class="lbl">Potencial mensual estimado</div></div>';
+  }
+
+  function renderTabla(data) {
+    if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="6">Sin reuniones registradas todavía.</td></tr>'; return; }
+    document.getElementById('tbody').innerHTML = data.map(function(n) {
+      var fecha = new Date(n.creado_en).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      var skus = (n.meeting_items || []).map(function(it) {
+        var monto = it.monto_mensual ? ' — $' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
+        return '<div>' + it.sku + (it.proveedor_actual ? ' (hoy: ' + it.proveedor_actual + ')' : '') + monto + '</div>';
+      }).join('');
+      return '<tr>' +
+        '<td>' + fecha + '</td>' +
+        '<td>' + n.cliente + '</td>' +
+        '<td>' + (n.empresa || '—') + '</td>' +
+        '<td>' + (n.importancia ? '<span class="badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '—') + '</td>' +
+        '<td class="skus-cell">' + (skus || '—') + '</td>' +
+        '<td>' + (n.nota || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function csvEscape(val) {
+    if (val === null || val === undefined) return '';
+    var s = String(val).replace(/"/g, '""');
+    return '"' + s + '"';
+  }
+
+  function exportarCSV() {
+    var rows = [['Fecha', 'Cliente', 'Empresa', 'Importancia', 'SKU', 'Proveedor actual', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota']];
+    currentData.forEach(function(n) {
+      var fecha = new Date(n.creado_en).toLocaleString('es-CL');
+      var items = n.meeting_items && n.meeting_items.length > 0 ? n.meeting_items : [{}];
+      items.forEach(function(it) {
+        rows.push([
+          fecha, n.cliente, n.empresa || '', n.importancia ? impLabel[n.importancia] : '',
+          it.sku || '', it.proveedor_actual || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
+          n.nota || ''
+        ]);
+      });
+    });
+    var csvContent = rows.map(function(r) { return r.map(csvEscape).join(','); }).join('\n');
+    var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'food-service-2026-reporte.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  cargar();
+</script>
+</body>
+</html>
