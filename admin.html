@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Stand GardenFood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-deep:#2E1A54; --purple:#4B2A82; --purple-soft:#EFEAF7;
+    --green:#7ED321; --amber:#F5A623; --gray:#B5AEC2;
+    --paper:#FBFAF8; --ink:#221733; --ink-soft:#6B6178; --line:#E4DEF0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:420px;margin:0 auto;min-height:100vh;padding:28px 20px 40px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--ink-soft);margin:0 0 24px;}
+  .current{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:24px;}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--gray);flex-shrink:0;transition:background .3s;}
+  .current strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:15px;}
+  .current span{font-size:12px;color:var(--ink-soft);}
+  button{width:100%;padding:18px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:15.5px;margin-bottom:12px;cursor:pointer;transition:transform .1s;color:#fff;}
+  button:active{transform:scale(.97);}
+  .btn-disponible{background:var(--green);color:var(--purple-deep);}
+  .btn-ocupado{background:var(--amber);}
+  .btn-fuera{background:var(--gray);color:var(--purple-deep);}
+  .btn-auto{background:transparent;color:var(--purple);border:1.5px solid var(--purple-soft);margin-top:16px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--purple-deep);
+    color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Panel del stand</h1>
+  <p class="sub">Solo tú deberías tener este link.</p>
+
+  <div class="current">
+    <span class="dot" id="dot"></span>
+    <div>
+      <strong id="estadoTxt">Cargando…</strong>
+      <span id="modoTxt"></span>
+    </div>
+  </div>
+
+  <button class="btn-disponible" onclick="setEstado('disponible')">Disponible en Stand</button>
+  <button class="btn-ocupado" onclick="setEstado('ocupado')">Ocupado</button>
+  <button class="btn-fuera" onclick="setEstado('fuera')">Fuera del stand</button>
+  <button class="btn-auto" onclick="setModoAuto()">Volver a modo automático</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+  var map = {
+    disponible: { label: 'Disponible en stand', color: '#7ED321' },
+    ocupado: { label: 'Ocupado', color: '#F5A623' },
+    fuera: { label: 'Fuera del stand', color: '#B5AEC2' }
+  };
+
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  }
+
+  function refresh() {
+    sb.from('stand_status').select('estado,modo').eq('id', 1).single().then(function(res) {
+      var data = res.data;
+      if (!data) return;
+      document.getElementById('estadoTxt').textContent = map[data.estado] ? map[data.estado].label : data.estado;
+      document.getElementById('modoTxt').textContent = data.modo === 'auto' ? 'Modo automático (según calendario)' : 'Fijado manualmente';
+      document.getElementById('dot').style.background = map[data.estado] ? map[data.estado].color : '#B5AEC2';
+    });
+  }
+
+  function setEstado(nuevo) {
+    sb.from('stand_status').update({ estado: nuevo, modo: 'manual', actualizado_en: new Date().toISOString() }).eq('id', 1)
+      .then(function(){ showToast('Estado actualizado: ' + map[nuevo].label); refresh(); });
+  }
+
+  function setModoAuto() {
+    sb.from('stand_status').update({ modo: 'auto', actualizado_en: new Date().toISOString() }).eq('id', 1)
+      .then(function(){ showToast('Modo automático activado'); refresh(); });
+  }
+
+  refresh();
+  setInterval(refresh, 15000);
+</script>
+</body>
+</html>
