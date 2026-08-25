@@ -2,7 +2,7 @@ BEGIN:VCARD
 VERSION:3.0
 N:Fuentes;Joaquín;;;
 FN:Joaquín Fuentes
-ORG:GardenFood;SeaGarden SpA
+ORG:GardenFood
 TITLE:KAM Senior · Canal Horeca
 TEL;TYPE=CELL,VOICE:+56973851606
 EMAIL;TYPE=WORK:jfuentes@gardenfood.cl
