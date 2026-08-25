@@ -14,48 +14,88 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 60px;}
   h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin:0 0 4px;}
   .sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 24px;}
+
+  #gate{max-width:340px;margin:80px auto;text-align:center;}
+  #gate input{width:100%;padding:14px;border:1px solid var(--line);border-radius:10px;font-size:15px;margin-bottom:10px;box-sizing:border-box;}
+  #gate button{width:100%;padding:14px;border:none;border-radius:10px;background:var(--purple-deep);color:#fff;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+  #gate .err{color:var(--red);font-size:12.5px;margin-top:8px;}
+  #contenido{display:none;}
 
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
   .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;}
   .stat .num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--purple-deep);}
   .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 
-  button{border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:pointer;
+  button.action{border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:pointer;
     background:var(--purple-deep);color:#fff;padding:12px 20px;font-size:13.5px;margin-bottom:20px;}
 
-  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
-  th{background:var(--purple-soft);color:var(--purple-deep);font-family:'Space Grotesk',sans-serif;font-size:11.5px;
-    text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;text-align:left;}
-  td{padding:10px 12px;font-size:13px;border-top:1px solid var(--line);vertical-align:top;}
-  .badge{display:inline-flex;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--line);font-size:12.5px;}
+  th{background:var(--purple-soft);color:var(--purple-deep);font-family:'Space Grotesk',sans-serif;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.03em;padding:9px 10px;text-align:left;white-space:nowrap;}
+  td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top;}
+  .badge{display:inline-flex;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;white-space:nowrap;}
   .badge-alto{background:#FDEAEA;color:var(--red);}
   .badge-medio{background:#FEF3E0;color:#B8720A;}
   .badge-bajo{background:var(--purple-soft);color:var(--ink-soft);}
-  .skus-cell div{padding:2px 0;font-size:12px;color:var(--ink-soft);}
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div id="gate">
+  <h1 style="font-size:18px;">Reporte Food Service 2026</h1>
+  <p class="sub">Acceso restringido</p>
+  <input type="password" id="clave" placeholder="Clave de acceso" onkeydown="if(event.key==='Enter')entrar()">
+  <button onclick="entrar()">Entrar</button>
+  <p class="err" id="err" style="display:none;">Clave incorrecta</p>
+</div>
+
+<div class="wrap" id="contenido">
   <h1>Reporte — Food Service 2026</h1>
   <p class="sub">Registro de reuniones en stand · GardenFood</p>
 
   <div class="stats" id="stats"></div>
 
-  <button onclick="exportarCSV()">Exportar CSV</button>
+  <button class="action" onclick="exportarCSV()">Exportar CSV</button>
 
+  <div style="overflow-x:auto;">
   <table id="tabla">
     <thead>
-      <tr><th>Fecha</th><th>Cliente</th><th>Empresa</th><th>Importancia</th><th>SKUs</th><th>Nota</th></tr>
+      <tr>
+        <th>Fecha</th><th>Vendedor</th><th>Nombre</th><th>Razón Social</th><th>Nombre Fantasía</th>
+        <th>Compra actualmente a</th><th>SKU</th><th>Volumen (kg/mes)</th><th>Precio ($/kg)</th>
+        <th>Monto mensual est.</th><th>Nota</th><th>Importancia</th>
+      </tr>
     </thead>
-    <tbody id="tbody"><tr><td colspan="6">Cargando…</td></tr></tbody>
+    <tbody id="tbody"><tr><td colspan="12">Cargando…</td></tr></tbody>
   </table>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+  var CLAVE_ACCESO = 'foodservice2026'; // cámbiala aquí si quieres otra clave
+
+  function entrar() {
+    var v = document.getElementById('clave').value;
+    if (v === CLAVE_ACCESO) {
+      sessionStorage.setItem('gf_reporte_ok', '1');
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('contenido').style.display = 'block';
+      cargar();
+    } else {
+      document.getElementById('err').style.display = 'block';
+    }
+  }
+
+  if (sessionStorage.getItem('gf_reporte_ok') === '1') {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+  }
+
   var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
   var sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -64,9 +104,9 @@
   var currentData = [];
 
   function cargar() {
-    sb.from('meeting_notes').select('id,cliente,empresa,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
       .order('creado_en', { ascending: false }).then(function(res) {
-        if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="6">Error al cargar</td></tr>'; console.error(res.error); return; }
+        if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Error al cargar</td></tr>'; console.error(res.error); return; }
         currentData = res.data || [];
         renderStats(currentData);
         renderTabla(currentData);
@@ -86,23 +126,32 @@
       '<div class="stat"><div class="num">$' + montoTotal.toLocaleString('es-CL') + '</div><div class="lbl">Potencial mensual estimado</div></div>';
   }
 
+  function filaHtml(n, it) {
+    var fecha = new Date(n.creado_en).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return '<tr>' +
+      '<td>' + fecha + '</td>' +
+      '<td>' + (n.vendedor || '—') + '</td>' +
+      '<td>' + n.cliente + '</td>' +
+      '<td>' + (n.razon_social || '—') + '</td>' +
+      '<td>' + (n.nombre_fantasia || '—') + '</td>' +
+      '<td>' + (n.empresa_compra_actual || '—') + '</td>' +
+      '<td>' + (it.sku || '—') + '</td>' +
+      '<td>' + (it.volumen_kg ? Number(it.volumen_kg).toLocaleString('es-CL') : '—') + '</td>' +
+      '<td>' + (it.precio_clp ? '$' + Number(it.precio_clp).toLocaleString('es-CL') : '—') + '</td>' +
+      '<td>' + (it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') : '—') + '</td>' +
+      '<td>' + (n.nota || '—') + '</td>' +
+      '<td>' + (n.importancia ? '<span class="badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '—') + '</td>' +
+      '</tr>';
+  }
+
   function renderTabla(data) {
-    if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="6">Sin reuniones registradas todavía.</td></tr>'; return; }
-    document.getElementById('tbody').innerHTML = data.map(function(n) {
-      var fecha = new Date(n.creado_en).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-      var skus = (n.meeting_items || []).map(function(it) {
-        var monto = it.monto_mensual ? ' — $' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
-        return '<div>' + it.sku + (it.proveedor_actual ? ' (hoy: ' + it.proveedor_actual + ')' : '') + monto + '</div>';
-      }).join('');
-      return '<tr>' +
-        '<td>' + fecha + '</td>' +
-        '<td>' + n.cliente + '</td>' +
-        '<td>' + (n.empresa || '—') + '</td>' +
-        '<td>' + (n.importancia ? '<span class="badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '—') + '</td>' +
-        '<td class="skus-cell">' + (skus || '—') + '</td>' +
-        '<td>' + (n.nota || '—') + '</td>' +
-        '</tr>';
-    }).join('');
+    if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Sin reuniones registradas todavía.</td></tr>'; return; }
+    var html = '';
+    data.forEach(function(n) {
+      var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
+      items.forEach(function(it) { html += filaHtml(n, it); });
+    });
+    document.getElementById('tbody').innerHTML = html;
   }
 
   function csvEscape(val) {
@@ -112,15 +161,15 @@
   }
 
   function exportarCSV() {
-    var rows = [['Fecha', 'Cliente', 'Empresa', 'Importancia', 'SKU', 'Proveedor actual', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota']];
+    var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'Compra actualmente a', 'SKU', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia']];
     currentData.forEach(function(n) {
       var fecha = new Date(n.creado_en).toLocaleString('es-CL');
-      var items = n.meeting_items && n.meeting_items.length > 0 ? n.meeting_items : [{}];
+      var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
       items.forEach(function(it) {
         rows.push([
-          fecha, n.cliente, n.empresa || '', n.importancia ? impLabel[n.importancia] : '',
-          it.sku || '', it.proveedor_actual || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
-          n.nota || ''
+          fecha, n.vendedor || '', n.cliente, n.razon_social || '', n.nombre_fantasia || '', n.empresa_compra_actual || '',
+          it.sku || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
+          n.nota || '', n.importancia ? impLabel[n.importancia] : ''
         ]);
       });
     });
@@ -135,7 +184,7 @@
     document.body.removeChild(a);
   }
 
-  cargar();
+  if (sessionStorage.getItem('gf_reporte_ok') === '1') cargar();
 </script>
 </body>
 </html>

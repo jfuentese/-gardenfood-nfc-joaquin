@@ -38,6 +38,7 @@
     font-size:14px;margin-bottom:10px;background:var(--paper);color:var(--ink);}
   textarea{resize:vertical;min-height:60px;}
   label{font-size:11.5px;color:var(--ink-soft);display:block;margin:0 0 4px;font-weight:500;}
+  .divider{height:1px;background:var(--line);margin:14px 0;}
 
   .sku-row{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative;}
   .sku-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -83,12 +84,23 @@
 
   <h2>Nueva nota de reunión</h2>
   <div class="card">
-    <label>Cliente</label>
-    <input id="fCliente" placeholder="Nombre de la persona">
-    <label>Empresa</label>
-    <input id="fEmpresa" placeholder="Nombre del negocio">
+    <label>Vendedor (tus iniciales)</label>
+    <input id="fVendedor" placeholder="Ej: JFU">
 
-    <label style="margin-top:4px;">SKUs de interés</label>
+    <div class="divider"></div>
+
+    <label>Nombre (contacto)</label>
+    <input id="fCliente" placeholder="Ej: Pedro Pablo">
+    <label>Razón Social</label>
+    <input id="fRazonSocial" placeholder="Ej: Kamver SpA">
+    <label>Nombre de fantasía</label>
+    <input id="fNombreFantasia" placeholder="Ej: Kamisushi">
+    <label>Empresa a la que compra actualmente</label>
+    <input id="fProveedorActual" placeholder="Ej: Comercial Océano">
+
+    <div class="divider"></div>
+
+    <label>SKUs de interés</label>
     <div id="skuList"></div>
     <button class="add-sku" onclick="addSkuRow()">+ Agregar SKU</button>
 
@@ -122,6 +134,13 @@
     t.classList.add('show');
     setTimeout(function(){ t.classList.remove('show'); }, 2200);
   }
+
+  // ---- Recordar vendedor entre sesiones ----
+  var vendedorGuardado = localStorage.getItem('gf_vendedor');
+  if (vendedorGuardado) document.getElementById('fVendedor').value = vendedorGuardado;
+  document.getElementById('fVendedor').addEventListener('change', function() {
+    localStorage.setItem('gf_vendedor', this.value);
+  });
 
   // ---- Estado del stand ----
   function refreshEstado() {
@@ -167,8 +186,6 @@
       '<button class="sku-remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>' +
       '<label>SKU / Producto</label>' +
       '<input class="sku-nombre" placeholder="Ej: Camarón 36/40 Ecuatoriano crudo pelado">' +
-      '<label>Proveedor actual</label>' +
-      '<input class="sku-proveedor" placeholder="Ej: Comercial Océano">' +
       '<div class="sku-grid">' +
         '<div><label>Volumen (kg/mes)</label><input class="sku-volumen" type="text" inputmode="numeric" placeholder="1.500" oninput="updateBadge(\'' + id + '\')"></div>' +
         '<div><label>Precio ($/kg neto)</label><input class="sku-precio" type="text" inputmode="numeric" placeholder="6.300" oninput="updateBadge(\'' + id + '\')"></div>' +
@@ -194,10 +211,15 @@
   addSkuRow(); // arranca con una fila lista
 
   function guardarNota() {
+    var vendedor = document.getElementById('fVendedor').value.trim();
     var cliente = document.getElementById('fCliente').value.trim();
-    if (!cliente) { showToast('Falta el nombre del cliente'); return; }
-    var empresa = document.getElementById('fEmpresa').value.trim();
+    if (!cliente) { showToast('Falta el nombre del contacto'); return; }
+    var razonSocial = document.getElementById('fRazonSocial').value.trim();
+    var nombreFantasia = document.getElementById('fNombreFantasia').value.trim();
+    var proveedorActual = document.getElementById('fProveedorActual').value.trim();
     var nota = document.getElementById('fNota').value.trim();
+
+    localStorage.setItem('gf_vendedor', vendedor);
 
     var rows = document.querySelectorAll('.sku-row');
     var items = [];
@@ -205,17 +227,19 @@
     rows.forEach(function(row) {
       var sku = row.querySelector('.sku-nombre').value.trim();
       if (!sku) return;
-      var proveedor = row.querySelector('.sku-proveedor').value.trim();
       var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
       var precio = parseCLNumber(row.querySelector('.sku-precio').value);
       if (vol * precio > maxMonto) maxMonto = vol * precio;
-      items.push({ sku: sku, proveedor_actual: proveedor, volumen_kg: vol || null, precio_clp: precio || null });
+      items.push({ sku: sku, volumen_kg: vol || null, precio_clp: precio || null });
     });
 
     var importancia = importanciaDeMonto(maxMonto).nivel;
 
-    sb.from('meeting_notes').insert({ cliente: cliente, empresa: empresa, nota: nota, importancia: importancia })
-      .select().single().then(function(res) {
+    sb.from('meeting_notes').insert({
+      vendedor: vendedor, cliente: cliente, razon_social: razonSocial,
+      nombre_fantasia: nombreFantasia, empresa_compra_actual: proveedorActual,
+      nota: nota, importancia: importancia
+    }).select().single().then(function(res) {
         if (res.error) { showToast('Error al guardar'); console.error(res.error); return; }
         var meetingId = res.data.id;
         if (items.length > 0) {
@@ -236,14 +260,16 @@
 
   function limpiarForm() {
     document.getElementById('fCliente').value = '';
-    document.getElementById('fEmpresa').value = '';
+    document.getElementById('fRazonSocial').value = '';
+    document.getElementById('fNombreFantasia').value = '';
+    document.getElementById('fProveedorActual').value = '';
     document.getElementById('fNota').value = '';
     document.getElementById('skuList').innerHTML = '';
     addSkuRow();
   }
 
   function cargarNotas() {
-    sb.from('meeting_notes').select('id,cliente,empresa,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
       .order('creado_en', { ascending: false }).limit(30).then(function(res) {
         var list = document.getElementById('notesList');
         if (res.error) { list.innerHTML = '<p class="sub">Error al cargar</p>'; console.error(res.error); return; }
@@ -253,12 +279,13 @@
         var impClase = { alto: 'badge-alto', medio: 'badge-medio', bajo: 'badge-bajo' };
         list.innerHTML = data.map(function(n) {
           var fecha = new Date(n.creado_en).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          var nombreEmpresa = n.nombre_fantasia || n.razon_social || '';
           var skusHtml = (n.meeting_items || []).map(function(it) {
             var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
-            return '<div>' + it.sku + (it.proveedor_actual ? ' · hoy: ' + it.proveedor_actual : '') + (monto ? ' · ' + monto : '') + '</div>';
+            return '<div>' + it.sku + (monto ? ' · ' + monto : '') + '</div>';
           }).join('');
           return '<div class="note-item">' +
-            '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + (n.empresa || '') + ' · ' + fecha + '</div></div>' +
+            '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + nombreEmpresa + (n.empresa_compra_actual ? ' · compra a: ' + n.empresa_compra_actual : '') + ' · ' + (n.vendedor || '') + ' · ' + fecha + '</div></div>' +
             (n.importancia ? '<span class="sku-badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '') +
             '</div>' +
             (n.nota ? '<div class="nota-txt">' + n.nota + '</div>' : '') +
