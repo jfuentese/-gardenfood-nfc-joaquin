@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joaquín Fuentes · GardenFood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-deep:#2E1A54; --purple:#4B2A82; --purple-soft:#EFEAF7;
+    --green:#7ED321; --green-deep:#4F9915;
+    --paper:#FBFAF8; --ink:#221733; --ink-soft:#6B6178; --line:#E4DEF0;
+    --amber:#F5A623; --gray-dot:#B5AEC2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  a{text-decoration:none;color:inherit;}
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;background:var(--paper);}
+
+  .hero{background:linear-gradient(165deg,var(--purple-deep) 0%,var(--purple) 62%,var(--green-deep) 100%);
+    padding:40px 24px 36px;position:relative;overflow:hidden;color:#fff;}
+  .leaf{position:absolute;width:120px;height:120px;opacity:.14;}
+  .leaf svg{width:100%;height:100%;}
+  .leaf.l1{top:-30px;right:-30px;transform:rotate(12deg);}
+  .leaf.l2{bottom:-20px;left:-40px;width:90px;height:90px;transform:rotate(-18deg);}
+  .toprow{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;}
+  .toprow img{height:30px;width:auto;border-radius:4px;display:block;}
+  .badge-fair{font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.28);border-radius:100px;padding:5px 10px;}
+  .profile-row{display:flex;align-items:center;gap:14px;margin-top:28px;position:relative;z-index:2;}
+  .avatar{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;}
+  .name{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;line-height:1.12;margin:0 0 4px;}
+  .stand-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);
+    border-radius:100px;padding:4px 10px 4px 8px;font-size:11.5px;font-weight:500;color:#fff;margin-bottom:4px;}
+  .stand-dot{width:7px;height:7px;border-radius:50%;background:var(--gray-dot);flex-shrink:0;transition:background .3s;}
+  .role{font-size:14px;color:rgba(255,255,255,.86);margin:0 0 2px;}
+  .company{font-size:12.5px;color:rgba(255,255,255,.62);margin:0;}
+
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 20px 4px;}
+  .btn{display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:14px;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;}
+  .btn small{font-family:'Inter',sans-serif;font-weight:400;font-size:11.5px;opacity:.75;}
+  .btn.wa{background:var(--green);color:var(--purple-deep);}
+  .btn.web{background:var(--purple-soft);color:var(--purple-deep);}
+  .btn.full{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;text-align:center;}
+  .btn.cal{background:var(--purple-soft);color:var(--purple-deep);}
+  .btn.vcard{background:var(--purple-deep);color:#fff;}
+
+  .section{padding:26px 20px 4px;}
+  .section h2{font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .section h2::after{content:'';flex:1;height:1px;background:var(--line);}
+
+  .catalog{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin-bottom:10px;color:var(--ink);}
+  .catalog .swatch{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;color:#fff;font-size:13px;}
+  .catalog.sea .swatch{background:linear-gradient(135deg,#1c4d8f,#3f8fd6);}
+  .catalog.meat .swatch{background:linear-gradient(135deg,#7a1620,#c73b2f);}
+  .catalog .info{flex:1;min-width:0;}
+  .catalog .info strong{display:block;font-size:14.5px;font-family:'Space Grotesk',sans-serif;}
+  .catalog .info span{font-size:12px;color:var(--ink-soft);}
+
+  .pills{display:flex;flex-wrap:wrap;gap:7px;padding:0 20px 6px;}
+  .pill{font-size:12px;padding:6px 12px;border-radius:100px;background:var(--purple-soft);color:var(--purple-deep);font-weight:500;}
+
+  .contact-list{padding:0 20px;margin-top:8px;}
+  .contact-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .contact-row:last-child{border-bottom:none;}
+  .ico{width:32px;height:32px;border-radius:9px;background:var(--purple-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .contact-row strong{display:block;font-size:13.5px;}
+  .contact-row span{font-size:12px;color:var(--ink-soft);}
+
+  footer{padding:30px 20px 40px;text-align:center;}
+  footer img{height:20px;opacity:.8;margin-bottom:8px;border-radius:3px;}
+  footer p{font-size:11px;color:var(--ink-soft);margin:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <div class="leaf l1"><svg viewBox="0 0 100 100"><path d="M10 90 C10 40 40 10 90 10 C90 60 60 90 10 90 Z" fill="#fff"/></svg></div>
+    <div class="leaf l2"><svg viewBox="0 0 100 100"><path d="M10 90 C10 40 40 10 90 10 C90 60 60 90 10 90 Z" fill="#fff"/></svg></div>
+    <div class="toprow">
+      <img src="logo-gardenfood.jpeg" alt="GardenFood">
+      <div class="badge-fair">Food Service 2026</div>
+    </div>
+    <div class="profile-row">
+      <div class="avatar">JF</div>
+      <div style="min-width:0;">
+        <h1 class="name">Joaquín Fuentes</h1>
+        <span class="stand-badge"><span class="stand-dot" id="standDot"></span><span id="standText">Cargando…</span></span>
+        <p class="role">KAM Senior · Canal Horeca</p>
+        <p class="company">GardenFood</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <a class="btn wa" href="https://wa.me/56973851606?text=Hola%20Joaqu%C3%ADn%2C%20nos%20conocimos%20en%20Food%20Service%202026" target="_blank" rel="noopener">
+      WhatsApp<small>Escríbeme directo</small>
+    </a>
+    <a class="btn web" href="https://migardenfood.cl" target="_blank" rel="noopener">
+      Sitio web<small>migardenfood.cl</small>
+    </a>
+    <a class="btn full cal" href="https://calendar.app.google/RRYcKnt2aWStpdNv5" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Agendar visita al stand
+    </a>
+    <a class="btn full vcard" href="joaquin-fuentes.vcf" download="joaquin-fuentes.vcf">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Guardar contacto
+    </a>
+  </div>
+
+  <div class="section"><h2>Catálogos</h2></div>
+  <div style="padding:0 20px;">
+    <a class="catalog sea" href="catalogo-seagarden.pdf" target="_blank" rel="noopener">
+      <div class="swatch">SG</div>
+      <div class="info"><strong>Catálogo SeaGarden</strong><span>Salmones · pescados · mariscos · camarones · sushi</span></div>
+    </a>
+    <a class="catalog meat" href="catalogo-meatgarden.pdf" target="_blank" rel="noopener">
+      <div class="swatch">MG</div>
+      <div class="info"><strong>Catálogo MeatGarden</strong><span>Vacuno · cerdo · pollo · elaborados</span></div>
+    </a>
+  </div>
+
+  <div class="section"><h2>Líneas de producto</h2></div>
+  <div class="pills">
+    <span class="pill">Salmón</span><span class="pill">Camarones</span><span class="pill">Mariscos</span>
+    <span class="pill">Pulpo</span><span class="pill">Insumos sushi</span><span class="pill">Vacuno</span>
+    <span class="pill">Cerdo</span><span class="pill">Pollo</span><span class="pill">Elaborados</span>
+  </div>
+
+  <div class="section"><h2>Otros medios</h2></div>
+  <div class="contact-list">
+    <a class="contact-row" href="mailto:jfuentes@gardenfood.cl">
+      <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B2A82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div>
+      <div><strong>Correo</strong><span>jfuentes@gardenfood.cl</span></div>
+    </a>
+    <a class="contact-row" href="tel:+56973851606">
+      <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B2A82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+      <div><strong>Teléfono</strong><span>+56 9 7385 1606</span></div>
+    </a>
+    <a class="contact-row" href="https://www.linkedin.com/in/joaquinfuentesebel" target="_blank" rel="noopener">
+      <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B2A82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></div>
+      <div><strong>LinkedIn</strong><span>linkedin.com/in/joaquinfuentesebel</span></div>
+    </a>
+  </div>
+
+  <footer>
+    <img src="logo-gardenfood.jpeg" alt="GardenFood">
+    <p>Los Maitenes Poniente 1332, Pudahuel</p>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var map = {
+    disponible: { label: 'Disponible en stand', color: '#7ED321' },
+    ocupado: { label: 'Ocupado', color: '#F5A623' },
+    fuera: { label: 'Fuera del stand', color: '#B5AEC2' }
+  };
+  function fetchEstado() {
+    sb.from('stand_status').select('estado').eq('id', 1).single().then(function(res) {
+      var data = res.data;
+      if (data && map[data.estado]) {
+        document.getElementById('standText').textContent = map[data.estado].label;
+        document.getElementById('standDot').style.background = map[data.estado].color;
+      }
+    });
+  }
+  fetchEstado();
+  setInterval(fetchEstado, 20000);
+</script>
+</body>
+</html>
