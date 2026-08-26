@@ -105,6 +105,7 @@
 
   function cargar() {
     sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
+      .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).then(function(res) {
         if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Error al cargar</td></tr>'; console.error(res.error); return; }
         currentData = res.data || [];

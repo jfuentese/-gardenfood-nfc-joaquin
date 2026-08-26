@@ -40,16 +40,26 @@
   label{font-size:11.5px;color:var(--ink-soft);display:block;margin:0 0 4px;font-weight:500;}
   .divider{height:1px;background:var(--line);margin:14px 0;}
 
+  .en-curso-banner{background:var(--purple-deep);color:#fff;border-radius:12px;padding:10px 14px;font-size:12.5px;
+    margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .en-curso-banner .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;
+    animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
   .sku-row{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative;}
+  .sku-row.guardado{background:#F3F9EC;border-color:#C9E8A8;}
   .sku-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .sku-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;margin-top:4px;}
   .badge-alto{background:#FDEAEA;color:var(--red);}
   .badge-medio{background:#FEF3E0;color:#B8720A;}
   .badge-bajo{background:#EFEAF7;color:var(--ink-soft);}
   .sku-remove{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;}
+  .sku-save{background:var(--purple-deep);color:#fff;width:100%;padding:9px;font-size:12.5px;margin-top:4px;}
+  .sku-saved-tag{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#4F9915;font-weight:600;margin-top:4px;}
 
   .add-sku{background:var(--purple-soft);color:var(--purple-deep);width:100%;padding:10px;font-size:13px;margin-bottom:14px;}
   .save-btn{background:var(--purple-deep);color:#fff;width:100%;padding:15px;font-size:14.5px;}
+  .finalizar-btn{background:var(--green);color:var(--purple-deep);width:100%;padding:16px;font-size:15px;margin-top:6px;}
 
   .note-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;}
   .note-item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
@@ -82,35 +92,43 @@
   <button class="stand-btn btn-fuera" onclick="setEstado('fuera')">Fuera del stand</button>
   <button class="btn-auto" onclick="setModoAuto()">Volver a modo automático</button>
 
-  <h2>Nueva nota de reunión</h2>
-  <div class="card">
-    <label>Vendedor (tus iniciales)</label>
-    <input id="fVendedor" placeholder="Ej: JFU">
+  <h2>Reunión</h2>
 
-    <div class="divider"></div>
-
-    <label>Nombre (contacto)</label>
-    <input id="fCliente" placeholder="Ej: Pedro Pablo">
-    <label>Razón Social</label>
-    <input id="fRazonSocial" placeholder="Ej: Kamver SpA">
-    <label>Nombre de fantasía</label>
-    <input id="fNombreFantasia" placeholder="Ej: Kamisushi">
-    <label>Empresa a la que compra actualmente</label>
-    <input id="fProveedorActual" placeholder="Ej: Comercial Océano">
-
-    <div class="divider"></div>
-
-    <label>SKUs de interés</label>
-    <div id="skuList"></div>
-    <button class="add-sku" onclick="addSkuRow()">+ Agregar SKU</button>
-
-    <label>Nota general</label>
-    <textarea id="fNota" placeholder="Contexto de la conversación, próximos pasos, etc."></textarea>
-
-    <button class="save-btn" onclick="guardarNota()">Guardar nota</button>
+  <div id="bannerEnCurso" style="display:none;" class="en-curso-banner">
+    <span class="pulse"></span> Reunión en curso — se guarda automático
   </div>
 
-  <h2>Reuniones registradas</h2>
+  <div class="card">
+    <div id="datosCliente">
+      <label>Vendedor (tus iniciales)</label>
+      <input id="fVendedor" placeholder="Ej: JFU">
+      <div class="divider"></div>
+      <label>Nombre (contacto)</label>
+      <input id="fCliente" placeholder="Ej: Pedro Pablo">
+      <label>Razón Social</label>
+      <input id="fRazonSocial" placeholder="Ej: Kamver SpA">
+      <label>Nombre de fantasía</label>
+      <input id="fNombreFantasia" placeholder="Ej: Kamisushi">
+      <label>Empresa a la que compra actualmente</label>
+      <input id="fProveedorActual" placeholder="Ej: Comercial Océano">
+    </div>
+
+    <button class="save-btn" id="btnIniciar" onclick="iniciarReunion()">Iniciar reunión</button>
+
+    <div id="seccionSkus" style="display:none;">
+      <div class="divider"></div>
+      <label>SKUs de interés</label>
+      <div id="skuList"></div>
+      <button class="add-sku" onclick="addSkuRow()">+ Agregar SKU</button>
+
+      <label>Nota general</label>
+      <textarea id="fNota" placeholder="Contexto de la conversación, próximos pasos, etc." onblur="autosaveNota()"></textarea>
+
+      <button class="finalizar-btn" onclick="finalizarReunion()">✓ Finalizar reunión</button>
+    </div>
+  </div>
+
+  <h2>Reuniones finalizadas</h2>
   <div id="notesList"><p class="sub">Cargando…</p></div>
 </div>
 
@@ -138,9 +156,6 @@
   // ---- Recordar vendedor entre sesiones ----
   var vendedorGuardado = localStorage.getItem('gf_vendedor');
   if (vendedorGuardado) document.getElementById('fVendedor').value = vendedorGuardado;
-  document.getElementById('fVendedor').addEventListener('change', function() {
-    localStorage.setItem('gf_vendedor', this.value);
-  });
 
   // ---- Estado del stand ----
   function refreshEstado() {
@@ -161,7 +176,9 @@
       .then(function(){ showToast('Modo automático activado'); refreshEstado(); });
   }
 
-  // ---- Notas de reunión ----
+  // ---- Reunión en curso ----
+  var meetingId = localStorage.getItem('gf_meeting_id');
+
   function parseCLNumber(str) {
     if (!str) return 0;
     var clean = String(str).replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, '');
@@ -173,6 +190,51 @@
     if (monto >= 3000000) return { nivel: 'alto', label: 'ALTO', clase: 'badge-alto' };
     if (monto >= 1000000) return { nivel: 'medio', label: 'MEDIO', clase: 'badge-medio' };
     return { nivel: 'bajo', label: 'BAJO', clase: 'badge-bajo' };
+  }
+
+  function iniciarReunion() {
+    var vendedor = document.getElementById('fVendedor').value.trim();
+    var cliente = document.getElementById('fCliente').value.trim();
+    if (!cliente) { showToast('Falta el nombre del contacto'); return; }
+    localStorage.setItem('gf_vendedor', vendedor);
+
+    var payload = {
+      vendedor: vendedor, cliente: cliente,
+      razon_social: document.getElementById('fRazonSocial').value.trim(),
+      nombre_fantasia: document.getElementById('fNombreFantasia').value.trim(),
+      empresa_compra_actual: document.getElementById('fProveedorActual').value.trim(),
+      estado: 'en_curso'
+    };
+
+    sb.from('meeting_notes').insert(payload).select().single().then(function(res) {
+      if (res.error) { showToast('Error al iniciar'); console.error(res.error); return; }
+      meetingId = res.data.id;
+      localStorage.setItem('gf_meeting_id', meetingId);
+      entrarModoEnCurso();
+      showToast('Reunión iniciada');
+    });
+  }
+
+  function entrarModoEnCurso() {
+    document.getElementById('bannerEnCurso').style.display = 'flex';
+    document.getElementById('btnIniciar').style.display = 'none';
+    document.getElementById('seccionSkus').style.display = 'block';
+    // bloquea edición de datos del cliente una vez iniciada (evita inconsistencias)
+    document.querySelectorAll('#datosCliente input').forEach(function(inp){ inp.disabled = true; });
+  }
+
+  function salirModoEnCurso() {
+    localStorage.removeItem('gf_meeting_id');
+    meetingId = null;
+    document.getElementById('bannerEnCurso').style.display = 'none';
+    document.getElementById('btnIniciar').style.display = 'block';
+    document.getElementById('seccionSkus').style.display = 'none';
+    document.querySelectorAll('#datosCliente input').forEach(function(inp){ inp.disabled = false; inp.value = ''; });
+    var vg = localStorage.getItem('gf_vendedor');
+    if (vg) document.getElementById('fVendedor').value = vg;
+    document.getElementById('fNota').value = '';
+    document.getElementById('skuList').innerHTML = '';
+    addSkuRow();
   }
 
   var skuCounter = 0;
@@ -190,7 +252,8 @@
         '<div><label>Volumen (kg/mes)</label><input class="sku-volumen" type="text" inputmode="numeric" placeholder="1.500" oninput="updateBadge(\'' + id + '\')"></div>' +
         '<div><label>Precio ($/kg neto)</label><input class="sku-precio" type="text" inputmode="numeric" placeholder="6.300" oninput="updateBadge(\'' + id + '\')"></div>' +
       '</div>' +
-      '<div class="badge-holder"></div>';
+      '<div class="badge-holder"></div>' +
+      '<button class="sku-save" onclick="guardarSku(\'' + id + '\')">Guardar SKU</button>';
     document.getElementById('skuList').appendChild(div);
   }
 
@@ -208,73 +271,99 @@
     }
   }
 
-  addSkuRow(); // arranca con una fila lista
+  function guardarSku(id) {
+    if (!meetingId) { showToast('Primero inicia la reunión'); return; }
+    var row = document.getElementById(id);
+    var sku = row.querySelector('.sku-nombre').value.trim();
+    if (!sku) { showToast('Falta el nombre del SKU'); return; }
+    var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
+    var precio = parseCLNumber(row.querySelector('.sku-precio').value);
 
-  function guardarNota() {
-    var vendedor = document.getElementById('fVendedor').value.trim();
-    var cliente = document.getElementById('fCliente').value.trim();
-    if (!cliente) { showToast('Falta el nombre del contacto'); return; }
-    var razonSocial = document.getElementById('fRazonSocial').value.trim();
-    var nombreFantasia = document.getElementById('fNombreFantasia').value.trim();
-    var proveedorActual = document.getElementById('fProveedorActual').value.trim();
-    var nota = document.getElementById('fNota').value.trim();
-
-    localStorage.setItem('gf_vendedor', vendedor);
-
-    var rows = document.querySelectorAll('.sku-row');
-    var items = [];
-    var maxMonto = 0;
-    rows.forEach(function(row) {
-      var sku = row.querySelector('.sku-nombre').value.trim();
-      if (!sku) return;
-      var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
-      var precio = parseCLNumber(row.querySelector('.sku-precio').value);
-      if (vol * precio > maxMonto) maxMonto = vol * precio;
-      items.push({ sku: sku, volumen_kg: vol || null, precio_clp: precio || null });
+    sb.from('meeting_items').insert({
+      meeting_id: meetingId, sku: sku, volumen_kg: vol || null, precio_clp: precio || null
+    }).then(function(res) {
+      if (res.error) { showToast('Error al guardar SKU'); console.error(res.error); return; }
+      row.classList.add('guardado');
+      row.querySelectorAll('input').forEach(function(inp){ inp.disabled = true; });
+      row.querySelector('.sku-save').outerHTML = '<div class="sku-saved-tag">✓ Guardado</div>';
+      row.querySelector('.sku-remove').remove();
+      showToast('SKU guardado');
+      addSkuRow(); // deja lista la siguiente fila
     });
-
-    var importancia = importanciaDeMonto(maxMonto).nivel;
-
-    sb.from('meeting_notes').insert({
-      vendedor: vendedor, cliente: cliente, razon_social: razonSocial,
-      nombre_fantasia: nombreFantasia, empresa_compra_actual: proveedorActual,
-      nota: nota, importancia: importancia
-    }).select().single().then(function(res) {
-        if (res.error) { showToast('Error al guardar'); console.error(res.error); return; }
-        var meetingId = res.data.id;
-        if (items.length > 0) {
-          var itemsWithId = items.map(function(it) { it.meeting_id = meetingId; return it; });
-          sb.from('meeting_items').insert(itemsWithId).then(function(res2) {
-            if (res2.error) console.error(res2.error);
-            showToast('Nota guardada');
-            limpiarForm();
-            cargarNotas();
-          });
-        } else {
-          showToast('Nota guardada');
-          limpiarForm();
-          cargarNotas();
-        }
-      });
   }
 
-  function limpiarForm() {
-    document.getElementById('fCliente').value = '';
-    document.getElementById('fRazonSocial').value = '';
-    document.getElementById('fNombreFantasia').value = '';
-    document.getElementById('fProveedorActual').value = '';
-    document.getElementById('fNota').value = '';
-    document.getElementById('skuList').innerHTML = '';
-    addSkuRow();
+  function autosaveNota() {
+    if (!meetingId) return;
+    var nota = document.getElementById('fNota').value.trim();
+    sb.from('meeting_notes').update({ nota: nota }).eq('id', meetingId).then(function(){});
+  }
+
+  function finalizarReunion() {
+    if (!meetingId) return;
+    autosaveNota();
+    sb.from('meeting_items').select('volumen_kg,precio_clp').eq('meeting_id', meetingId).then(function(res) {
+      var maxMonto = 0;
+      (res.data || []).forEach(function(it) {
+        var m = (Number(it.volumen_kg)||0) * (Number(it.precio_clp)||0);
+        if (m > maxMonto) maxMonto = m;
+      });
+      var importancia = importanciaDeMonto(maxMonto).nivel;
+      sb.from('meeting_notes').update({ estado: 'finalizada', importancia: importancia }).eq('id', meetingId).then(function(res2) {
+        if (res2.error) { showToast('Error al finalizar'); console.error(res2.error); return; }
+        showToast('Reunión finalizada ✓');
+        salirModoEnCurso();
+        cargarNotas();
+      });
+    });
+  }
+
+  // ---- Al cargar: si hay reunión en curso guardada, retomarla ----
+  function retomarSiCorresponde() {
+    if (!meetingId) { addSkuRow(); return; }
+    sb.from('meeting_notes').select('*,meeting_items(id,sku,volumen_kg,precio_clp,monto_mensual)').eq('id', meetingId).single()
+      .then(function(res) {
+        if (res.error || !res.data || res.data.estado === 'finalizada') {
+          localStorage.removeItem('gf_meeting_id'); meetingId = null; addSkuRow(); return;
+        }
+        var n = res.data;
+        document.getElementById('fVendedor').value = n.vendedor || '';
+        document.getElementById('fCliente').value = n.cliente || '';
+        document.getElementById('fRazonSocial').value = n.razon_social || '';
+        document.getElementById('fNombreFantasia').value = n.nombre_fantasia || '';
+        document.getElementById('fProveedorActual').value = n.empresa_compra_actual || '';
+        document.getElementById('fNota').value = n.nota || '';
+        entrarModoEnCurso();
+        document.getElementById('skuList').innerHTML = '';
+        (n.meeting_items || []).forEach(function(it) {
+          skuCounter++;
+          var id = 'sku' + skuCounter;
+          var div = document.createElement('div');
+          div.className = 'sku-row guardado';
+          div.id = id;
+          var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
+          div.innerHTML =
+            '<label>SKU / Producto</label><input class="sku-nombre" value="' + it.sku + '" disabled>' +
+            '<div class="sku-grid">' +
+              '<div><label>Volumen (kg/mes)</label><input value="' + (it.volumen_kg||'') + '" disabled></div>' +
+              '<div><label>Precio ($/kg neto)</label><input value="' + (it.precio_clp||'') + '" disabled></div>' +
+            '</div>' +
+            (monto ? '<span class="sku-badge badge-medio">' + monto + '</span>' : '') +
+            '<div class="sku-saved-tag">✓ Guardado</div>';
+          document.getElementById('skuList').appendChild(div);
+        });
+        addSkuRow();
+        showToast('Retomando reunión en curso');
+      });
   }
 
   function cargarNotas() {
     sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
+      .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).limit(30).then(function(res) {
         var list = document.getElementById('notesList');
         if (res.error) { list.innerHTML = '<p class="sub">Error al cargar</p>'; console.error(res.error); return; }
         var data = res.data || [];
-        if (data.length === 0) { list.innerHTML = '<p class="sub">Sin reuniones registradas todavía.</p>'; return; }
+        if (data.length === 0) { list.innerHTML = '<p class="sub">Sin reuniones finalizadas todavía.</p>'; return; }
         var impLabel = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
         var impClase = { alto: 'badge-alto', medio: 'badge-medio', bajo: 'badge-bajo' };
         list.innerHTML = data.map(function(n) {
@@ -297,6 +386,7 @@
 
   refreshEstado();
   setInterval(refreshEstado, 15000);
+  retomarSiCorresponde();
   cargarNotas();
 </script>
 </body>
