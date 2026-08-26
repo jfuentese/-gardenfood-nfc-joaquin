@@ -109,8 +109,6 @@
       <input id="fRazonSocial" placeholder="Ej: Kamver SpA">
       <label>Nombre de fantasía</label>
       <input id="fNombreFantasia" placeholder="Ej: Kamisushi">
-      <label>Empresa a la que compra actualmente</label>
-      <input id="fProveedorActual" placeholder="Ej: Comercial Océano">
     </div>
 
     <button class="save-btn" id="btnIniciar" onclick="iniciarReunion()">Iniciar reunión</button>
@@ -202,7 +200,6 @@
       vendedor: vendedor, cliente: cliente,
       razon_social: document.getElementById('fRazonSocial').value.trim(),
       nombre_fantasia: document.getElementById('fNombreFantasia').value.trim(),
-      empresa_compra_actual: document.getElementById('fProveedorActual').value.trim(),
       estado: 'en_curso'
     };
 
@@ -248,6 +245,8 @@
       '<button class="sku-remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>' +
       '<label>SKU / Producto</label>' +
       '<input class="sku-nombre" placeholder="Ej: Camarón 36/40 Ecuatoriano crudo pelado">' +
+      '<label>Proveedor actual (de ese SKU)</label>' +
+      '<input class="sku-proveedor" placeholder="Ej: Comercial Océano">' +
       '<div class="sku-grid">' +
         '<div><label>Volumen (kg/mes)</label><input class="sku-volumen" type="text" inputmode="numeric" placeholder="1.500" oninput="updateBadge(\'' + id + '\')"></div>' +
         '<div><label>Precio ($/kg neto)</label><input class="sku-precio" type="text" inputmode="numeric" placeholder="6.300" oninput="updateBadge(\'' + id + '\')"></div>' +
@@ -276,11 +275,12 @@
     var row = document.getElementById(id);
     var sku = row.querySelector('.sku-nombre').value.trim();
     if (!sku) { showToast('Falta el nombre del SKU'); return; }
+    var proveedor = row.querySelector('.sku-proveedor').value.trim();
     var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
     var precio = parseCLNumber(row.querySelector('.sku-precio').value);
 
     sb.from('meeting_items').insert({
-      meeting_id: meetingId, sku: sku, volumen_kg: vol || null, precio_clp: precio || null
+      meeting_id: meetingId, sku: sku, proveedor_actual: proveedor || null, volumen_kg: vol || null, precio_clp: precio || null
     }).then(function(res) {
       if (res.error) { showToast('Error al guardar SKU'); console.error(res.error); return; }
       row.classList.add('guardado');
@@ -320,7 +320,7 @@
   // ---- Al cargar: si hay reunión en curso guardada, retomarla ----
   function retomarSiCorresponde() {
     if (!meetingId) { addSkuRow(); return; }
-    sb.from('meeting_notes').select('*,meeting_items(id,sku,volumen_kg,precio_clp,monto_mensual)').eq('id', meetingId).single()
+    sb.from('meeting_notes').select('*,meeting_items(id,sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)').eq('id', meetingId).single()
       .then(function(res) {
         if (res.error || !res.data || res.data.estado === 'finalizada') {
           localStorage.removeItem('gf_meeting_id'); meetingId = null; addSkuRow(); return;
@@ -330,7 +330,6 @@
         document.getElementById('fCliente').value = n.cliente || '';
         document.getElementById('fRazonSocial').value = n.razon_social || '';
         document.getElementById('fNombreFantasia').value = n.nombre_fantasia || '';
-        document.getElementById('fProveedorActual').value = n.empresa_compra_actual || '';
         document.getElementById('fNota').value = n.nota || '';
         entrarModoEnCurso();
         document.getElementById('skuList').innerHTML = '';
@@ -343,6 +342,7 @@
           var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
           div.innerHTML =
             '<label>SKU / Producto</label><input class="sku-nombre" value="' + it.sku + '" disabled>' +
+            '<label>Proveedor actual</label><input value="' + (it.proveedor_actual||'') + '" disabled>' +
             '<div class="sku-grid">' +
               '<div><label>Volumen (kg/mes)</label><input value="' + (it.volumen_kg||'') + '" disabled></div>' +
               '<div><label>Precio ($/kg neto)</label><input value="' + (it.precio_clp||'') + '" disabled></div>' +
@@ -357,7 +357,7 @@
   }
 
   function cargarNotas() {
-    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
       .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).limit(30).then(function(res) {
         var list = document.getElementById('notesList');
@@ -371,10 +371,10 @@
           var nombreEmpresa = n.nombre_fantasia || n.razon_social || '';
           var skusHtml = (n.meeting_items || []).map(function(it) {
             var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
-            return '<div>' + it.sku + (monto ? ' · ' + monto : '') + '</div>';
+            return '<div>' + it.sku + (it.proveedor_actual ? ' · hoy: ' + it.proveedor_actual : '') + (monto ? ' · ' + monto : '') + '</div>';
           }).join('');
           return '<div class="note-item">' +
-            '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + nombreEmpresa + (n.empresa_compra_actual ? ' · compra a: ' + n.empresa_compra_actual : '') + ' · ' + (n.vendedor || '') + ' · ' + fecha + '</div></div>' +
+            '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + nombreEmpresa + ' · ' + (n.vendedor || '') + ' · ' + fecha + '</div></div>' +
             (n.importancia ? '<span class="sku-badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '') +
             '</div>' +
             (n.nota ? '<div class="nota-txt">' + n.nota + '</div>' : '') +

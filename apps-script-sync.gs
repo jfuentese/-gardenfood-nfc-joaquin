@@ -19,7 +19,7 @@ function sincronizar() {
               SpreadsheetApp.getActiveSpreadsheet().insertSheet('Notas');
   sheet.clear();
 
-  var headers = ['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'Compra actualmente a', 'SKU', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia'];
+  var headers = ['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'SKU', 'Compra actualmente a', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia'];
   sheet.appendRow(headers);
 
   var impLabel = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
@@ -34,8 +34,8 @@ function sincronizar() {
         nota.cliente || '',
         nota.razon_social || '',
         nota.nombre_fantasia || '',
-        nota.empresa_compra_actual || '',
         item.sku || '',
+        item.proveedor_actual || '',
         item.volumen_kg || '',
         item.precio_clp || '',
         item.monto_mensual || '',

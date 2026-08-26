@@ -66,7 +66,7 @@
     <thead>
       <tr>
         <th>Fecha</th><th>Vendedor</th><th>Nombre</th><th>Razón Social</th><th>Nombre Fantasía</th>
-        <th>Compra actualmente a</th><th>SKU</th><th>Volumen (kg/mes)</th><th>Precio ($/kg)</th>
+        <th>SKU</th><th>Compra actualmente a</th><th>Volumen (kg/mes)</th><th>Precio ($/kg)</th>
         <th>Monto mensual est.</th><th>Nota</th><th>Importancia</th>
       </tr>
     </thead>
@@ -104,7 +104,7 @@
   var currentData = [];
 
   function cargar() {
-    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,empresa_compra_actual,nota,importancia,creado_en,meeting_items(sku,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
       .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).then(function(res) {
         if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Error al cargar</td></tr>'; console.error(res.error); return; }
@@ -135,8 +135,8 @@
       '<td>' + n.cliente + '</td>' +
       '<td>' + (n.razon_social || '—') + '</td>' +
       '<td>' + (n.nombre_fantasia || '—') + '</td>' +
-      '<td>' + (n.empresa_compra_actual || '—') + '</td>' +
       '<td>' + (it.sku || '—') + '</td>' +
+      '<td>' + (it.proveedor_actual || '—') + '</td>' +
       '<td>' + (it.volumen_kg ? Number(it.volumen_kg).toLocaleString('es-CL') : '—') + '</td>' +
       '<td>' + (it.precio_clp ? '$' + Number(it.precio_clp).toLocaleString('es-CL') : '—') + '</td>' +
       '<td>' + (it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') : '—') + '</td>' +
@@ -162,14 +162,14 @@
   }
 
   function exportarCSV() {
-    var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'Compra actualmente a', 'SKU', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia']];
+    var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'SKU', 'Compra actualmente a', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia']];
     currentData.forEach(function(n) {
       var fecha = new Date(n.creado_en).toLocaleString('es-CL');
       var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
       items.forEach(function(it) {
         rows.push([
-          fecha, n.vendedor || '', n.cliente, n.razon_social || '', n.nombre_fantasia || '', n.empresa_compra_actual || '',
-          it.sku || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
+          fecha, n.vendedor || '', n.cliente, n.razon_social || '', n.nombre_fantasia || '',
+          it.sku || '', it.proveedor_actual || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
           n.nota || '', n.importancia ? impLabel[n.importancia] : ''
         ]);
       });
