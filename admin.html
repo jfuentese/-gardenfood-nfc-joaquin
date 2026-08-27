@@ -86,6 +86,9 @@
   .note-item .nota-txt{font-size:13px;color:var(--ink);margin:6px 0;}
   .note-item .skus{font-size:12px;color:var(--ink-soft);}
   .note-item .skus div{padding:3px 0;border-top:1px solid var(--line);}
+  .cerrado-btn{border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;}
+  .cerrado-no{background:var(--purple-soft);color:var(--purple-deep);}
+  .cerrado-si{background:var(--green);color:var(--purple-deep);}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--purple-deep);
     color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;z-index:100;max-width:90%;text-align:center;}
@@ -585,7 +588,7 @@
   }
 
   function cargarNotas() {
-    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,cerrado,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
       .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).limit(30).then(function(res) {
         var list = document.getElementById('notesList');
@@ -601,15 +604,27 @@
             var monto = it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') + '/mes' : '';
             return '<div>' + it.sku + (it.proveedor_actual ? ' · hoy: ' + it.proveedor_actual : '') + (monto ? ' · ' + monto : '') + '</div>';
           }).join('');
+          var cerradoHtml = n.cerrado
+            ? '<button class="cerrado-btn cerrado-si" onclick="toggleCerrado(' + n.id + ', true)">✓ Cerrado</button>'
+            : '<button class="cerrado-btn cerrado-no" onclick="toggleCerrado(' + n.id + ', false)">Marcar como cerrado</button>';
           return '<div class="note-item">' +
             '<div class="top"><div><strong>' + n.cliente + '</strong><div class="meta">' + nombreEmpresa + ' · ' + (n.vendedor || '') + ' · ' + fecha + '</div></div>' +
             (n.importancia ? '<span class="sku-badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '') +
             '</div>' +
             (n.nota ? '<div class="nota-txt">' + n.nota + '</div>' : '') +
             (skusHtml ? '<div class="skus">' + skusHtml + '</div>' : '') +
+            '<div style="margin-top:8px;">' + cerradoHtml + '</div>' +
             '</div>';
         }).join('');
       });
+  }
+
+  function toggleCerrado(id, actual) {
+    sb.from('meeting_notes').update({ cerrado: !actual }).eq('id', id).then(function(res) {
+      if (res.error) { showToast('Error al actualizar'); return; }
+      showToast(!actual ? '¡Marcado como cerrado! 🎉' : 'Desmarcado');
+      cargarNotas();
+    });
   }
 
   refreshEstado();

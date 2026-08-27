@@ -77,10 +77,10 @@
       <tr>
         <th>Fecha</th><th>Vendedor</th><th>Nombre</th><th>Razón Social</th><th>Nombre Fantasía</th>
         <th>SKU</th><th>Compra actualmente a</th><th>Volumen (kg/mes)</th><th>Precio ($/kg)</th>
-        <th>Monto mensual est.</th><th>Nota</th><th>Importancia</th>
+        <th>Monto mensual est.</th><th>Nota</th><th>Importancia</th><th>Cerrado</th>
       </tr>
     </thead>
-    <tbody id="tbody"><tr><td colspan="12">Cargando…</td></tr></tbody>
+    <tbody id="tbody"><tr><td colspan="13">Cargando…</td></tr></tbody>
   </table>
   </div>
 </div>
@@ -115,10 +115,10 @@
   var datosMostrados = [];
 
   function cargar() {
-    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,cerrado,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
       .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).then(function(res) {
-        if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Error al cargar</td></tr>'; console.error(res.error); return; }
+        if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="13">Error al cargar</td></tr>'; console.error(res.error); return; }
         currentData = res.data || [];
         poblarFiltros(currentData);
         renderStats(currentData);
@@ -175,14 +175,18 @@
   function renderStats(data) {
     var total = data.length;
     var altos = data.filter(function(n){ return n.importancia === 'alto'; }).length;
-    var montoTotal = 0;
+    var montoTotal = 0, montoCerrado = 0;
     data.forEach(function(n) {
-      (n.meeting_items || []).forEach(function(it) { montoTotal += Number(it.monto_mensual) || 0; });
+      var m = 0;
+      (n.meeting_items || []).forEach(function(it) { m += Number(it.monto_mensual) || 0; });
+      montoTotal += m;
+      if (n.cerrado) montoCerrado += m;
     });
     document.getElementById('stats').innerHTML =
       '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Reuniones registradas</div></div>' +
       '<div class="stat"><div class="num">' + altos + '</div><div class="lbl">Prospectos ALTO interés</div></div>' +
-      '<div class="stat"><div class="num">$' + montoTotal.toLocaleString('es-CL') + '</div><div class="lbl">Potencial mensual estimado</div></div>';
+      '<div class="stat"><div class="num">$' + montoTotal.toLocaleString('es-CL') + '</div><div class="lbl">Potencial mensual estimado</div></div>' +
+      '<div class="stat"><div class="num">$' + montoCerrado.toLocaleString('es-CL') + '</div><div class="lbl">Ya cerrado</div></div>';
   }
 
   function filaHtml(n, it) {
@@ -200,12 +204,13 @@
       '<td>' + (it.monto_mensual ? '$' + Number(it.monto_mensual).toLocaleString('es-CL') : '—') + '</td>' +
       '<td>' + (n.nota || '—') + '</td>' +
       '<td>' + (n.importancia ? '<span class="badge ' + impClase[n.importancia] + '">' + impLabel[n.importancia] + '</span>' : '—') + '</td>' +
+      '<td>' + (n.cerrado ? '<span class="badge" style="background:#EAF3DE;color:#173404;">Sí</span>' : 'No') + '</td>' +
       '</tr>';
   }
 
   function renderTabla(data) {
     datosMostrados = data;
-    if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Sin reuniones registradas todavía.</td></tr>'; return; }
+    if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="13">Sin reuniones registradas todavía.</td></tr>'; return; }
     var html = '';
     data.forEach(function(n) {
       var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
@@ -221,7 +226,7 @@
   }
 
   function exportarCSV() {
-    var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'SKU', 'Compra actualmente a', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia']];
+    var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'SKU', 'Compra actualmente a', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia', 'Cerrado']];
     datosMostrados.forEach(function(n) {
       var fecha = new Date(n.creado_en).toLocaleString('es-CL');
       var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
@@ -229,7 +234,7 @@
         rows.push([
           fecha, n.vendedor || '', n.cliente, n.razon_social || '', n.nombre_fantasia || '',
           it.sku || '', it.proveedor_actual || '', it.volumen_kg || '', it.precio_clp || '', it.monto_mensual || '',
-          n.nota || '', n.importancia ? impLabel[n.importancia] : ''
+          n.nota || '', n.importancia ? impLabel[n.importancia] : '', n.cerrado ? 'Sí' : 'No'
         ]);
       });
     });

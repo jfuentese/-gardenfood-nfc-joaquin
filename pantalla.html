@@ -32,31 +32,40 @@
 
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:36px;}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center;}
-  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:var(--green);}
-  .stat .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;color:var(--green);}
+  .stat .num.cerrado{color:#FFD700;}
+  .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
 
-  .section-title{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0 0 14px;color:var(--ink-soft);
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab-btn{background:var(--card);border:1px solid var(--line);color:var(--ink-soft);border-radius:100px;
+    padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+  .tab-btn.active{background:var(--green);color:var(--purple-deep);border-color:var(--green);}
+
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:28px 0 14px;color:var(--ink-soft);
     text-transform:uppercase;letter-spacing:.06em;}
 
-  .ranking{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;margin-bottom:36px;}
-  .rank-row{display:flex;align-items:center;gap:16px;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .ranking{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;margin-bottom:20px;}
+  .rank-row{display:flex;align-items:center;gap:16px;padding:16px;border-bottom:1px solid var(--line);}
   .rank-row:last-child{border-bottom:none;}
-  .rank-pos{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--ink-soft);width:32px;text-align:center;}
+  .rank-pos{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--ink-soft);width:32px;text-align:center;flex-shrink:0;}
   .rank-row:nth-child(1) .rank-pos{color:#FFD700;}
   .rank-row:nth-child(2) .rank-pos{color:#C0C0C0;}
   .rank-row:nth-child(3) .rank-pos{color:#CD7F32;}
-  .rank-name{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;flex:1;}
-  .rank-detail{font-size:12.5px;color:var(--ink-soft);}
-  .rank-count{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--green);min-width:50px;text-align:right;}
+  .rank-name{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;flex:1;min-width:0;}
+  .rank-detail{font-size:12px;color:var(--ink-soft);font-weight:400;margin-top:2px;}
+  .rank-main{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--green);text-align:right;flex-shrink:0;}
+  .rank-sub{font-size:11px;color:#FFD700;text-align:right;margin-top:2px;}
 
   .deals{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;}
   .deal-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line);}
   .deal-row:last-child{border-bottom:none;}
   .deal-badge{background:#FDEAEA;color:var(--red);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
     padding:4px 10px;border-radius:100px;flex-shrink:0;}
+  .deal-badge.cerrado{background:#2A4A1A;color:#FFD700;}
+  .deal-info{min-width:0;flex:1;}
   .deal-info strong{display:block;font-size:14.5px;}
   .deal-info span{font-size:12px;color:var(--ink-soft);}
-  .deal-monto{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--green);font-size:15px;}
+  .deal-monto{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--green);font-size:15px;flex-shrink:0;}
 
   .celebracion{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120%);
     background:linear-gradient(135deg,var(--green),var(--green-deep));color:var(--purple-deep);
@@ -87,7 +96,13 @@
 
   <div class="stats" id="stats"></div>
 
-  <p class="section-title">Ranking de vendedores</p>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabMonto" onclick="cambiarTab('monto')">$ Monto levantado</button>
+    <button class="tab-btn" id="tabOportunidades" onclick="cambiarTab('oportunidades')">Cantidad de oportunidades</button>
+    <button class="tab-btn" id="tabClientes" onclick="cambiarTab('clientes')">Clientes distintos</button>
+  </div>
+
+  <p class="section-title" id="rankingTitulo">Ranking por monto mensual levantado</p>
   <div class="ranking" id="ranking"></div>
 
   <p class="section-title">Últimos deals ALTO interés</p>
@@ -95,7 +110,7 @@
 </div>
 
 <div class="celebracion" id="celebracion">
-  <div class="titulo">🎉 ¡Nueva oportunidad ALTO!</div>
+  <div class="titulo">Nueva oportunidad ALTO</div>
   <div class="detalle" id="celebDetalle"></div>
 </div>
 
@@ -123,13 +138,16 @@
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
   var sb = window.supabase.createClient(SB_URL, SB_KEY);
   var idsVistos = null;
+  var tabActual = 'monto';
+  var ultimaData = [];
 
   function cargar() {
-    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,importancia,creado_en,meeting_items(monto_mensual)')
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,importancia,cerrado,creado_en,meeting_items(monto_mensual)')
       .eq('estado', 'finalizada')
       .order('creado_en', { ascending: false }).then(function(res) {
         if (res.error) { console.error(res.error); return; }
         var data = res.data || [];
+        ultimaData = data;
         renderStats(data);
         renderRanking(data);
         renderDeals(data);
@@ -143,38 +161,96 @@
     return d.toDateString() === hoy.toDateString();
   }
 
+  function montoDe(n) {
+    var m = 0;
+    (n.meeting_items || []).forEach(function(it) { m += Number(it.monto_mensual) || 0; });
+    return m;
+  }
+
   function renderStats(data) {
     var hoy = data.filter(function(n){ return esHoy(n.creado_en); });
     var altos = data.filter(function(n){ return n.importancia === 'alto'; });
-    var montoTotal = 0;
-    data.forEach(function(n){ (n.meeting_items||[]).forEach(function(it){ montoTotal += Number(it.monto_mensual)||0; }); });
+    var montoTotal = 0, montoCerrado = 0;
+    data.forEach(function(n){
+      var m = montoDe(n);
+      montoTotal += m;
+      if (n.cerrado) montoCerrado += m;
+    });
     document.getElementById('stats').innerHTML =
       '<div class="stat"><div class="num">' + hoy.length + '</div><div class="lbl">Oportunidades hoy</div></div>' +
       '<div class="stat"><div class="num">' + data.length + '</div><div class="lbl">Total feria</div></div>' +
-      '<div class="stat"><div class="num">' + altos.length + '</div><div class="lbl">Deals ALTO</div></div>' +
-      '<div class="stat"><div class="num">$' + (montoTotal/1000000).toFixed(1) + 'M</div><div class="lbl">Potencial mensual</div></div>';
+      '<div class="stat"><div class="num">$' + (montoTotal/1000000).toFixed(1) + 'M</div><div class="lbl">Potencial mensual levantado</div></div>' +
+      '<div class="stat"><div class="num cerrado">$' + (montoCerrado/1000000).toFixed(1) + 'M</div><div class="lbl">Ya cerrado ✓</div></div>';
+  }
+
+  function cambiarTab(tab) {
+    tabActual = tab;
+    ['tabMonto','tabOportunidades','tabClientes'].forEach(function(id){ document.getElementById(id).classList.remove('active'); });
+    var mapId = { monto: 'tabMonto', oportunidades: 'tabOportunidades', clientes: 'tabClientes' };
+    document.getElementById(mapId[tab]).classList.add('active');
+    var titulos = {
+      monto: 'Ranking por monto mensual levantado',
+      oportunidades: 'Ranking por cantidad de oportunidades',
+      clientes: 'Ranking por clientes distintos visitados'
+    };
+    document.getElementById('rankingTitulo').textContent = titulos[tab];
+    renderRanking(ultimaData);
   }
 
   function renderRanking(data) {
     var porVendedor = {};
     data.forEach(function(n) {
       var v = n.vendedor || 'Sin nombre';
-      if (!porVendedor[v]) porVendedor[v] = { total: 0, altos: 0 };
+      if (!porVendedor[v]) porVendedor[v] = { total: 0, altos: 0, monto: 0, montoCerrado: 0, cerrados: 0, clientes: {} };
+      var m = montoDe(n);
       porVendedor[v].total++;
+      porVendedor[v].monto += m;
       if (n.importancia === 'alto') porVendedor[v].altos++;
+      if (n.cerrado) { porVendedor[v].montoCerrado += m; porVendedor[v].cerrados++; }
+      var clienteKey = (n.cliente || '') + '|' + (n.razon_social || '');
+      porVendedor[v].clientes[clienteKey] = true;
     });
-    var lista = Object.keys(porVendedor).map(function(v){ return { vendedor: v, total: porVendedor[v].total, altos: porVendedor[v].altos }; });
-    lista.sort(function(a,b){ return b.total - a.total || b.altos - a.altos; });
+
+    var lista = Object.keys(porVendedor).map(function(v) {
+      var d = porVendedor[v];
+      return {
+        vendedor: v, total: d.total, altos: d.altos, monto: d.monto,
+        montoCerrado: d.montoCerrado, cerrados: d.cerrados, clientesDistintos: Object.keys(d.clientes).length
+      };
+    });
 
     var el = document.getElementById('ranking');
     if (lista.length === 0) { el.innerHTML = '<div class="empty">Aún no hay reuniones registradas.</div>'; return; }
-    el.innerHTML = lista.map(function(r, i) {
-      return '<div class="rank-row">' +
-        '<div class="rank-pos">' + (i+1) + '</div>' +
-        '<div class="rank-name">' + r.vendedor + '<div class="rank-detail">' + r.altos + ' de interés ALTO</div></div>' +
-        '<div class="rank-count">' + r.total + '</div>' +
-        '</div>';
-    }).join('');
+
+    if (tabActual === 'monto') {
+      lista.sort(function(a,b){ return b.monto - a.monto; });
+      el.innerHTML = lista.map(function(r, i) {
+        return '<div class="rank-row">' +
+          '<div class="rank-pos">' + (i+1) + '</div>' +
+          '<div class="rank-name">' + r.vendedor + '<div class="rank-detail">' + r.total + ' oportunidades · ' + r.cerrados + ' cerradas</div></div>' +
+          '<div><div class="rank-main">$' + (r.monto/1000000).toFixed(1) + 'M</div>' +
+          (r.montoCerrado > 0 ? '<div class="rank-sub">$' + (r.montoCerrado/1000000).toFixed(1) + 'M cerrado ✓</div>' : '') + '</div>' +
+          '</div>';
+      }).join('');
+    } else if (tabActual === 'oportunidades') {
+      lista.sort(function(a,b){ return b.total - a.total || b.altos - a.altos; });
+      el.innerHTML = lista.map(function(r, i) {
+        return '<div class="rank-row">' +
+          '<div class="rank-pos">' + (i+1) + '</div>' +
+          '<div class="rank-name">' + r.vendedor + '<div class="rank-detail">' + r.altos + ' de interés ALTO</div></div>' +
+          '<div class="rank-main">' + r.total + '</div>' +
+          '</div>';
+      }).join('');
+    } else {
+      lista.sort(function(a,b){ return b.clientesDistintos - a.clientesDistintos; });
+      el.innerHTML = lista.map(function(r, i) {
+        return '<div class="rank-row">' +
+          '<div class="rank-pos">' + (i+1) + '</div>' +
+          '<div class="rank-name">' + r.vendedor + '<div class="rank-detail">' + r.total + ' reuniones en total</div></div>' +
+          '<div class="rank-main">' + r.clientesDistintos + '</div>' +
+          '</div>';
+      }).join('');
+    }
   }
 
   function renderDeals(data) {
@@ -182,11 +258,10 @@
     var el = document.getElementById('deals');
     if (altos.length === 0) { el.innerHTML = '<div class="empty">Todavía no hay deals de interés ALTO.</div>'; return; }
     el.innerHTML = altos.map(function(n) {
-      var monto = 0;
-      (n.meeting_items||[]).forEach(function(it){ monto += Number(it.monto_mensual)||0; });
+      var monto = montoDe(n);
       var empresa = n.nombre_fantasia || n.razon_social || '';
       return '<div class="deal-row">' +
-        '<span class="deal-badge">ALTO</span>' +
+        '<span class="deal-badge' + (n.cerrado ? ' cerrado' : '') + '">' + (n.cerrado ? 'CERRADO' : 'ALTO') + '</span>' +
         '<div class="deal-info"><strong>' + n.cliente + '</strong><span>' + empresa + ' · ' + (n.vendedor||'') + '</span></div>' +
         '<div class="deal-monto">$' + monto.toLocaleString('es-CL') + '/mes</div>' +
         '</div>';
