@@ -59,6 +59,16 @@
 
   <div class="stats" id="stats"></div>
 
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+    <select id="fVendedor" onchange="aplicarFiltros()" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;">
+      <option value="">Todos los vendedores</option>
+    </select>
+    <select id="fDia" onchange="aplicarFiltros()" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;">
+      <option value="">Todos los días</option>
+    </select>
+    <input id="fBusqueda" placeholder="Buscar SKU, cliente, empresa…" oninput="aplicarFiltros()" style="flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;">
+  </div>
+
   <button class="action" onclick="exportarCSV()">Exportar CSV</button>
 
   <div style="overflow-x:auto;">
@@ -102,6 +112,7 @@
   var impLabel = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
   var impClase = { alto: 'badge-alto', medio: 'badge-medio', bajo: 'badge-bajo' };
   var currentData = [];
+  var datosMostrados = [];
 
   function cargar() {
     sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,nota,importancia,creado_en,meeting_items(sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)')
@@ -109,9 +120,56 @@
       .order('creado_en', { ascending: false }).then(function(res) {
         if (res.error) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Error al cargar</td></tr>'; console.error(res.error); return; }
         currentData = res.data || [];
+        poblarFiltros(currentData);
         renderStats(currentData);
         renderTabla(currentData);
       });
+  }
+
+  function poblarFiltros(data) {
+    var vendedores = {};
+    var dias = {};
+    data.forEach(function(n) {
+      if (n.vendedor) vendedores[n.vendedor] = true;
+      var d = new Date(n.creado_en).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+      dias[d] = true;
+    });
+    var selV = document.getElementById('fVendedor');
+    var valV = selV.value;
+    selV.innerHTML = '<option value="">Todos los vendedores</option>' +
+      Object.keys(vendedores).sort().map(function(v){ return '<option value="' + v + '">' + v + '</option>'; }).join('');
+    selV.value = valV;
+
+    var selD = document.getElementById('fDia');
+    var valD = selD.value;
+    selD.innerHTML = '<option value="">Todos los días</option>' +
+      Object.keys(dias).sort().map(function(d){ return '<option value="' + d + '">' + d + '</option>'; }).join('');
+    selD.value = valD;
+  }
+
+  function aplicarFiltros() {
+    var v = document.getElementById('fVendedor').value;
+    var d = document.getElementById('fDia').value;
+    var q = document.getElementById('fBusqueda').value.trim().toLowerCase();
+
+    var filtrado = currentData.filter(function(n) {
+      if (v && n.vendedor !== v) return false;
+      if (d) {
+        var nd = new Date(n.creado_en).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+        if (nd !== d) return false;
+      }
+      if (q) {
+        var enCliente = (n.cliente || '').toLowerCase().indexOf(q) !== -1;
+        var enRazon = (n.razon_social || '').toLowerCase().indexOf(q) !== -1;
+        var enFantasia = (n.nombre_fantasia || '').toLowerCase().indexOf(q) !== -1;
+        var enNota = (n.nota || '').toLowerCase().indexOf(q) !== -1;
+        var enSku = (n.meeting_items || []).some(function(it) { return (it.sku || '').toLowerCase().indexOf(q) !== -1; });
+        if (!enCliente && !enRazon && !enFantasia && !enNota && !enSku) return false;
+      }
+      return true;
+    });
+    renderStats(filtrado);
+    renderTabla(filtrado);
   }
 
   function renderStats(data) {
@@ -146,6 +204,7 @@
   }
 
   function renderTabla(data) {
+    datosMostrados = data;
     if (data.length === 0) { document.getElementById('tbody').innerHTML = '<tr><td colspan="12">Sin reuniones registradas todavía.</td></tr>'; return; }
     var html = '';
     data.forEach(function(n) {
@@ -163,7 +222,7 @@
 
   function exportarCSV() {
     var rows = [['Fecha', 'Vendedor', 'Nombre', 'Razón Social', 'Nombre Fantasía', 'SKU', 'Compra actualmente a', 'Volumen (kg/mes)', 'Precio ($/kg)', 'Monto mensual estimado', 'Nota', 'Importancia']];
-    currentData.forEach(function(n) {
+    datosMostrados.forEach(function(n) {
       var fecha = new Date(n.creado_en).toLocaleString('es-CL');
       var items = (n.meeting_items && n.meeting_items.length > 0) ? n.meeting_items : [{}];
       items.forEach(function(it) {

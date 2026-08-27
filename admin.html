@@ -26,6 +26,10 @@
   .current strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:14px;}
   .current span{font-size:11.5px;color:var(--ink-soft);}
 
+  .offline-banner{display:none;background:var(--amber);color:#4A2E00;border-radius:12px;padding:10px 14px;
+    font-size:12.5px;margin-bottom:16px;font-weight:600;}
+  .offline-banner.show{display:block;}
+
   button{border:none;border-radius:12px;font-family:'Space Grotesk',sans-serif;font-weight:700;cursor:pointer;}
   .stand-btn{width:100%;padding:15px;font-size:14.5px;margin-bottom:10px;color:#fff;}
   .btn-disponible{background:var(--green);color:var(--purple-deep);}
@@ -33,7 +37,7 @@
   .btn-fuera{background:var(--gray);color:var(--purple-deep);}
   .btn-auto{background:transparent;color:var(--purple);border:1.5px solid var(--purple-soft);width:100%;padding:13px;font-size:13.5px;margin-top:6px;}
 
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;position:relative;}
   input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;
     font-size:14px;margin-bottom:10px;background:var(--paper);color:var(--ink);}
   textarea{resize:vertical;min-height:60px;}
@@ -46,8 +50,21 @@
     animation:pulse 1.5s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
+  .suggestions{position:relative;}
+  .sugg-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 4px 16px rgba(0,0,0,.08);z-index:20;max-height:200px;overflow-y:auto;margin-top:-6px;display:none;}
+  .sugg-list.show{display:block;}
+  .sugg-item{padding:10px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line);}
+  .sugg-item:last-child{border-bottom:none;}
+  .sugg-item:active{background:var(--purple-soft);}
+  .sugg-item-nuevo{color:var(--purple-deep);font-weight:600;background:#FAF8FF;}
+  .sugg-item-nuevo:active{background:var(--purple-soft);}
+  .sugg-item .n{font-weight:600;}
+  .sugg-item .e{font-size:11.5px;color:var(--ink-soft);}
+
   .sku-row{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative;}
   .sku-row.guardado{background:#F3F9EC;border-color:#C9E8A8;}
+  .sku-row.pendiente{background:#FEF6E8;border-color:#F5D69A;}
   .sku-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .sku-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;margin-top:4px;}
   .badge-alto{background:#FDEAEA;color:var(--red);}
@@ -56,6 +73,7 @@
   .sku-remove{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;}
   .sku-save{background:var(--purple-deep);color:#fff;width:100%;padding:9px;font-size:12.5px;margin-top:4px;}
   .sku-saved-tag{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#4F9915;font-weight:600;margin-top:4px;}
+  .sku-pending-tag{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#B8720A;font-weight:600;margin-top:4px;}
 
   .add-sku{background:var(--purple-soft);color:var(--purple-deep);width:100%;padding:10px;font-size:13px;margin-bottom:14px;}
   .save-btn{background:var(--purple-deep);color:#fff;width:100%;padding:15px;font-size:14.5px;}
@@ -70,7 +88,7 @@
   .note-item .skus div{padding:3px 0;border-top:1px solid var(--line);}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--purple-deep);
-    color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;z-index:100;}
+    color:#fff;padding:12px 20px;border-radius:100px;font-size:13.5px;opacity:0;transition:all .25s;pointer-events:none;z-index:100;max-width:90%;text-align:center;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
@@ -78,6 +96,8 @@
 <div class="wrap">
   <h1>Panel del stand</h1>
   <p class="sub">Solo tú deberías tener este link.</p>
+
+  <div class="offline-banner" id="offlineBanner">⚠ Sin conexión — tus datos se están guardando en el celular y se subirán solos apenas vuelva el internet.</div>
 
   <div class="current">
     <span class="dot" id="dot"></span>
@@ -104,7 +124,10 @@
       <input id="fVendedor" placeholder="Ej: JFU">
       <div class="divider"></div>
       <label>Nombre (contacto)</label>
-      <input id="fCliente" placeholder="Ej: Pedro Pablo">
+      <div class="suggestions">
+        <input id="fCliente" placeholder="Ej: Pedro Pablo" oninput="buscarClientes()" autocomplete="off">
+        <div class="sugg-list" id="suggList"></div>
+      </div>
       <label>Razón Social</label>
       <input id="fRazonSocial" placeholder="Ej: Kamver SpA">
       <label>Nombre de fantasía</label>
@@ -132,8 +155,12 @@
 
 <div class="toast" id="toast"></div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+  var SKU_CATALOGO = [];
+  fetch('sku-catalogo.json').then(function(r){ return r.json(); }).then(function(data){ SKU_CATALOGO = data; }).catch(function(e){ console.error('No se pudo cargar el catálogo de SKUs', e); });
+
   var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
   var sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -149,6 +176,12 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  // ---- Autocompletado de SKUs ----
+  // ---- Normalización para búsqueda sin tildes/mayúsculas ----
+  function normalizeStr(s) {
+    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
   // ---- Recordar vendedor entre sesiones ----
@@ -174,8 +207,113 @@
       .then(function(){ showToast('Modo automático activado'); refreshEstado(); });
   }
 
+  // ---- Búsqueda de cliente existente ----
+  var buscarTimeout;
+  function buscarClientes() {
+    clearTimeout(buscarTimeout);
+    var q = document.getElementById('fCliente').value.trim();
+    var list = document.getElementById('suggList');
+    if (q.length < 2) { list.classList.remove('show'); return; }
+    buscarTimeout = setTimeout(function() {
+      sb.from('meeting_notes').select('cliente,razon_social,nombre_fantasia')
+        .or('cliente.ilike.%' + q + '%,razon_social.ilike.%' + q + '%,nombre_fantasia.ilike.%' + q + '%')
+        .order('creado_en', { ascending: false }).limit(6).then(function(res) {
+          var data = res.data || [];
+          var seen = {};
+          var unicos = data.filter(function(d) {
+            var key = d.cliente + '|' + (d.razon_social||'');
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+          });
+          if (unicos.length === 0) { list.classList.remove('show'); return; }
+          list.innerHTML = unicos.map(function(d, i) {
+            return '<div class="sugg-item" onclick="usarSugerencia(' + i + ')"><div class="n">' + d.cliente + '</div><div class="e">' +
+              (d.nombre_fantasia || d.razon_social || '') + '</div></div>';
+          }).join('');
+          window._suggData = unicos;
+          list.classList.add('show');
+        });
+    }, 300);
+  }
+  function usarSugerencia(i) {
+    var d = window._suggData[i];
+    document.getElementById('fCliente').value = d.cliente;
+    document.getElementById('fRazonSocial').value = d.razon_social || '';
+    document.getElementById('fNombreFantasia').value = d.nombre_fantasia || '';
+    document.getElementById('suggList').classList.remove('show');
+  }
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.suggestions').forEach(function(box) {
+      if (!box.contains(e.target)) {
+        var sl = box.querySelector('.sugg-list');
+        if (sl) sl.classList.remove('show');
+      }
+    });
+  });
+
+  // ---- Modo offline: cola de pendientes ----
+  function getQueue() { return JSON.parse(localStorage.getItem('gf_pending_queue') || '[]'); }
+  function saveQueue(q) { localStorage.setItem('gf_pending_queue', JSON.stringify(q)); updateOfflineBanner(); }
+  function getIdMap() { return JSON.parse(localStorage.getItem('gf_id_map') || '{}'); }
+  function saveIdMap(m) { localStorage.setItem('gf_id_map', JSON.stringify(m)); }
+  function updateOfflineBanner() {
+    var q = getQueue();
+    var banner = document.getElementById('offlineBanner');
+    if (q.length > 0) {
+      banner.classList.add('show');
+      banner.textContent = '⚠ ' + q.length + ' cambio(s) guardados en el celular, sincronizando...';
+    } else {
+      banner.classList.remove('show');
+    }
+  }
+  function resolveMeetingId(id) {
+    if (typeof id === 'number') return id;
+    var m = getIdMap();
+    return m[id] || id;
+  }
+
+  async function syncQueue() {
+    var q = getQueue();
+    if (q.length === 0) return;
+    var idMap = getIdMap();
+    var restante = [];
+    for (var i = 0; i < q.length; i++) {
+      var item = q[i];
+      try {
+        if (item.type === 'iniciar') {
+          var res = await sb.from('meeting_notes').insert(item.payload).select().single();
+          if (res.error) throw res.error;
+          idMap[item.tempId] = res.data.id;
+          saveIdMap(idMap);
+          if (meetingId === item.tempId) { meetingId = res.data.id; localStorage.setItem('gf_meeting_id', res.data.id); }
+        } else if (item.type === 'sku') {
+          var mid = idMap[item.tempMeetingId] || item.tempMeetingId;
+          if (typeof mid !== 'number') { restante.push(item); continue; }
+          var payload = Object.assign({}, item.payload, { meeting_id: mid });
+          var res2 = await sb.from('meeting_items').insert(payload);
+          if (res2.error) throw res2.error;
+        } else if (item.type === 'finalizar') {
+          var mid2 = idMap[item.tempMeetingId] || item.tempMeetingId;
+          if (typeof mid2 !== 'number') { restante.push(item); continue; }
+          var res3 = await sb.from('meeting_notes').update(item.payload).eq('id', mid2);
+          if (res3.error) throw res3.error;
+        }
+      } catch (e) {
+        restante.push(item);
+      }
+    }
+    saveQueue(restante);
+    if (restante.length < q.length) { showToast('Datos sincronizados ✓'); cargarNotas(); }
+  }
+
+  window.addEventListener('online', syncQueue);
+  setInterval(syncQueue, 20000);
+  syncQueue();
+
   // ---- Reunión en curso ----
   var meetingId = localStorage.getItem('gf_meeting_id');
+  if (meetingId && !isNaN(meetingId) && meetingId.indexOf('tmp_') === -1) meetingId = Number(meetingId);
 
   function parseCLNumber(str) {
     if (!str) return 0;
@@ -190,7 +328,7 @@
     return { nivel: 'bajo', label: 'BAJO', clase: 'badge-bajo' };
   }
 
-  function iniciarReunion() {
+  async function iniciarReunion() {
     var vendedor = document.getElementById('fVendedor').value.trim();
     var cliente = document.getElementById('fCliente').value.trim();
     if (!cliente) { showToast('Falta el nombre del contacto'); return; }
@@ -203,20 +341,29 @@
       estado: 'en_curso'
     };
 
-    sb.from('meeting_notes').insert(payload).select().single().then(function(res) {
-      if (res.error) { showToast('Error al iniciar'); console.error(res.error); return; }
+    try {
+      var res = await sb.from('meeting_notes').insert(payload).select().single();
+      if (res.error) throw res.error;
       meetingId = res.data.id;
       localStorage.setItem('gf_meeting_id', meetingId);
       entrarModoEnCurso();
       showToast('Reunión iniciada');
-    });
+    } catch (e) {
+      var tempId = 'tmp_' + Date.now();
+      meetingId = tempId;
+      localStorage.setItem('gf_meeting_id', tempId);
+      var q = getQueue();
+      q.push({ type: 'iniciar', tempId: tempId, payload: payload });
+      saveQueue(q);
+      entrarModoEnCurso();
+      showToast('Sin conexión — reunión guardada en el celular');
+    }
   }
 
   function entrarModoEnCurso() {
     document.getElementById('bannerEnCurso').style.display = 'flex';
     document.getElementById('btnIniciar').style.display = 'none';
     document.getElementById('seccionSkus').style.display = 'block';
-    // bloquea edición de datos del cliente una vez iniciada (evita inconsistencias)
     document.querySelectorAll('#datosCliente input').forEach(function(inp){ inp.disabled = true; });
   }
 
@@ -244,7 +391,10 @@
     div.innerHTML =
       '<button class="sku-remove" onclick="document.getElementById(\'' + id + '\').remove()">✕</button>' +
       '<label>SKU / Producto</label>' +
-      '<input class="sku-nombre" placeholder="Ej: Camarón 36/40 Ecuatoriano crudo pelado">' +
+      '<div class="suggestions">' +
+        '<input class="sku-nombre" placeholder="Escribe cualquier parte del nombre" autocomplete="off">' +
+        '<div class="sugg-list"></div>' +
+      '</div>' +
       '<label>Proveedor actual (de ese SKU)</label>' +
       '<input class="sku-proveedor" placeholder="Ej: Comercial Océano">' +
       '<div class="sku-grid">' +
@@ -254,6 +404,35 @@
       '<div class="badge-holder"></div>' +
       '<button class="sku-save" onclick="guardarSku(\'' + id + '\')">Guardar SKU</button>';
     document.getElementById('skuList').appendChild(div);
+    conectarAutocompletadoSku(div);
+  }
+
+  function conectarAutocompletadoSku(row) {
+    var input = row.querySelector('.sku-nombre');
+    var suggDiv = row.querySelector('.sugg-list');
+    input.addEventListener('input', function() {
+      var qOriginal = input.value.trim();
+      var q = normalizeStr(qOriginal);
+      if (q.length < 1) { suggDiv.classList.remove('show'); return; }
+      var catalogo = typeof SKU_CATALOGO !== 'undefined' ? SKU_CATALOGO : [];
+      var matches = catalogo.filter(function(item) { return normalizeStr(item).indexOf(q) !== -1; }).slice(0, 7);
+
+      var yaEsExacto = matches.some(function(m) { return normalizeStr(m) === q; });
+      var html = matches.map(function(m) { return '<div class="sugg-item">' + m + '</div>'; }).join('');
+      if (!yaEsExacto) {
+        html += '<div class="sugg-item sugg-item-nuevo">+ Agregar &ldquo;' + qOriginal + '&rdquo; como producto nuevo</div>';
+      }
+      suggDiv.innerHTML = html;
+      suggDiv.classList.add('show');
+    });
+    suggDiv.addEventListener('click', function(e) {
+      var nuevo = e.target.closest('.sugg-item-nuevo');
+      if (nuevo) { suggDiv.classList.remove('show'); return; }
+      var item = e.target.closest('.sugg-item');
+      if (!item) return;
+      input.value = item.textContent;
+      suggDiv.classList.remove('show');
+    });
   }
 
   function updateBadge(id) {
@@ -270,7 +449,7 @@
     }
   }
 
-  function guardarSku(id) {
+  async function guardarSku(id) {
     if (!meetingId) { showToast('Primero inicia la reunión'); return; }
     var row = document.getElementById(id);
     var sku = row.querySelector('.sku-nombre').value.trim();
@@ -278,48 +457,97 @@
     var proveedor = row.querySelector('.sku-proveedor').value.trim();
     var vol = parseCLNumber(row.querySelector('.sku-volumen').value);
     var precio = parseCLNumber(row.querySelector('.sku-precio').value);
+    var payload = { sku: sku, proveedor_actual: proveedor || null, volumen_kg: vol || null, precio_clp: precio || null };
 
-    sb.from('meeting_items').insert({
-      meeting_id: meetingId, sku: sku, proveedor_actual: proveedor || null, volumen_kg: vol || null, precio_clp: precio || null
-    }).then(function(res) {
-      if (res.error) { showToast('Error al guardar SKU'); console.error(res.error); return; }
-      row.classList.add('guardado');
+    function marcarUI(pendiente) {
+      row.classList.add(pendiente ? 'pendiente' : 'guardado');
       row.querySelectorAll('input').forEach(function(inp){ inp.disabled = true; });
-      row.querySelector('.sku-save').outerHTML = '<div class="sku-saved-tag">✓ Guardado</div>';
-      row.querySelector('.sku-remove').remove();
+      row.querySelector('.sku-save').outerHTML = pendiente
+        ? '<div class="sku-pending-tag">⏳ Guardado local, sincronizando…</div>'
+        : '<div class="sku-saved-tag">✓ Guardado</div>';
+      var rm = row.querySelector('.sku-remove'); if (rm) rm.remove();
+    }
+
+    if (typeof meetingId !== 'number') {
+      var q = getQueue();
+      q.push({ type: 'sku', tempMeetingId: meetingId, payload: payload });
+      saveQueue(q);
+      marcarUI(true);
+      showToast('SKU guardado en el celular');
+      addSkuRow();
+      return;
+    }
+
+    try {
+      var res = await sb.from('meeting_items').insert(Object.assign({ meeting_id: meetingId }, payload));
+      if (res.error) throw res.error;
+      marcarUI(false);
       showToast('SKU guardado');
-      addSkuRow(); // deja lista la siguiente fila
-    });
+    } catch (e) {
+      var q2 = getQueue();
+      q2.push({ type: 'sku', tempMeetingId: meetingId, payload: payload });
+      saveQueue(q2);
+      marcarUI(true);
+      showToast('Sin conexión — SKU guardado en el celular');
+    }
+    addSkuRow();
   }
 
   function autosaveNota() {
-    if (!meetingId) return;
+    if (!meetingId || typeof meetingId !== 'number') return;
     var nota = document.getElementById('fNota').value.trim();
     sb.from('meeting_notes').update({ nota: nota }).eq('id', meetingId).then(function(){});
   }
 
-  function finalizarReunion() {
+  async function finalizarReunion() {
     if (!meetingId) return;
     autosaveNota();
-    sb.from('meeting_items').select('volumen_kg,precio_clp').eq('meeting_id', meetingId).then(function(res) {
-      var maxMonto = 0;
-      (res.data || []).forEach(function(it) {
-        var m = (Number(it.volumen_kg)||0) * (Number(it.precio_clp)||0);
-        if (m > maxMonto) maxMonto = m;
-      });
-      var importancia = importanciaDeMonto(maxMonto).nivel;
-      sb.from('meeting_notes').update({ estado: 'finalizada', importancia: importancia }).eq('id', meetingId).then(function(res2) {
-        if (res2.error) { showToast('Error al finalizar'); console.error(res2.error); return; }
-        showToast('Reunión finalizada ✓');
-        salirModoEnCurso();
-        cargarNotas();
-      });
+    var nota = document.getElementById('fNota').value.trim();
+
+    var maxMonto = 0;
+    document.querySelectorAll('.sku-row').forEach(function(row) {
+      var v = parseCLNumber(row.querySelector('.sku-volumen') ? row.querySelector('.sku-volumen').value : '');
+      var p = parseCLNumber(row.querySelector('.sku-precio') ? row.querySelector('.sku-precio').value : '');
+      if (v * p > maxMonto) maxMonto = v * p;
     });
+    var importancia = importanciaDeMonto(maxMonto).nivel;
+    var payload = { estado: 'finalizada', importancia: importancia, nota: nota };
+
+    if (typeof meetingId !== 'number') {
+      var q = getQueue();
+      q.push({ type: 'finalizar', tempMeetingId: meetingId, payload: payload });
+      saveQueue(q);
+      showToast('Reunión finalizada (local) ✓');
+      salirModoEnCurso();
+      return;
+    }
+
+    try {
+      var res = await sb.from('meeting_notes').update(payload).eq('id', meetingId);
+      if (res.error) throw res.error;
+      showToast('Reunión finalizada ✓');
+      salirModoEnCurso();
+      cargarNotas();
+    } catch (e) {
+      var q2 = getQueue();
+      q2.push({ type: 'finalizar', tempMeetingId: meetingId, payload: payload });
+      saveQueue(q2);
+      showToast('Sin conexión — finalizada localmente');
+      salirModoEnCurso();
+    }
   }
 
   // ---- Al cargar: si hay reunión en curso guardada, retomarla ----
   function retomarSiCorresponde() {
     if (!meetingId) { addSkuRow(); return; }
+    if (typeof meetingId !== 'number') {
+      // reunión aún no sincronizada — no se puede recuperar el detalle desde la nube,
+      // pero seguimos permitiendo continuar agregando SKUs sobre el mismo id temporal
+      entrarModoEnCurso();
+      addSkuRow();
+      showToast('Retomando reunión aún no sincronizada');
+      return;
+    }
     sb.from('meeting_notes').select('*,meeting_items(id,sku,proveedor_actual,volumen_kg,precio_clp,monto_mensual)').eq('id', meetingId).single()
       .then(function(res) {
         if (res.error || !res.data || res.data.estado === 'finalizada') {
@@ -388,6 +616,7 @@
   setInterval(refreshEstado, 15000);
   retomarSiCorresponde();
   cargarNotas();
+  updateOfflineBanner();
 </script>
 </body>
 </html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking en vivo · Food Service 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-deep:#2E1A54; --purple:#4B2A82; --purple-soft:#EFEAF7;
+    --green:#7ED321; --green-deep:#4F9915; --amber:#F5A623; --red:#D64545; --gray:#B5AEC2;
+    --paper:#0F0A1F; --card:#1D1338; --ink:#FFFFFF; --ink-soft:#B7A9DE; --line:#3A2C63;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
+    background:radial-gradient(circle at 20% 0%, #2E1A54 0%, #0F0A1F 55%);min-height:100vh;}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 24px 60px;}
+
+  #gate{max-width:340px;margin:120px auto;text-align:center;}
+  #gate input{width:100%;padding:14px;border:1px solid var(--line);border-radius:10px;font-size:15px;margin-bottom:10px;
+    box-sizing:border-box;background:var(--card);color:#fff;}
+  #gate button{width:100%;padding:14px;border:none;border-radius:10px;background:var(--green);color:var(--purple-deep);
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+  #gate .err{color:var(--red);font-size:12.5px;margin-top:8px;}
+  #contenido{display:none;}
+
+  header{text-align:center;margin-bottom:32px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:32px;margin:0 0 6px;
+    background:linear-gradient(90deg,#7ED321,#EFEAF7);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sub{color:var(--ink-soft);font-size:14px;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:36px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center;}
+  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:var(--green);}
+  .stat .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0 0 14px;color:var(--ink-soft);
+    text-transform:uppercase;letter-spacing:.06em;}
+
+  .ranking{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;margin-bottom:36px;}
+  .rank-row{display:flex;align-items:center;gap:16px;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-pos{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--ink-soft);width:32px;text-align:center;}
+  .rank-row:nth-child(1) .rank-pos{color:#FFD700;}
+  .rank-row:nth-child(2) .rank-pos{color:#C0C0C0;}
+  .rank-row:nth-child(3) .rank-pos{color:#CD7F32;}
+  .rank-name{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;flex:1;}
+  .rank-detail{font-size:12.5px;color:var(--ink-soft);}
+  .rank-count{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--green);min-width:50px;text-align:right;}
+
+  .deals{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;}
+  .deal-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .deal-row:last-child{border-bottom:none;}
+  .deal-badge{background:#FDEAEA;color:var(--red);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+    padding:4px 10px;border-radius:100px;flex-shrink:0;}
+  .deal-info strong{display:block;font-size:14.5px;}
+  .deal-info span{font-size:12px;color:var(--ink-soft);}
+  .deal-monto{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--green);font-size:15px;}
+
+  .celebracion{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120%);
+    background:linear-gradient(135deg,var(--green),var(--green-deep));color:var(--purple-deep);
+    padding:20px 32px;border-radius:20px;text-align:center;z-index:200;transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 20px 60px rgba(0,0,0,.4);max-width:90%;}
+  .celebracion.show{transform:translateX(-50%) translateY(0);}
+  .celebracion .titulo{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+  .celebracion .detalle{font-size:13.5px;}
+
+  .empty{text-align:center;color:var(--ink-soft);padding:30px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1 style="font-size:20px;-webkit-text-fill-color:#fff;">Ranking Food Service 2026</h1>
+  <p class="sub">Acceso restringido</p>
+  <input type="password" id="clave" placeholder="Clave de acceso" onkeydown="if(event.key==='Enter')entrar()">
+  <button onclick="entrar()">Entrar</button>
+  <p class="err" id="err" style="display:none;">Clave incorrecta</p>
+</div>
+
+<div class="wrap" id="contenido">
+  <header>
+    <h1>Food Service 2026</h1>
+    <p class="sub">Oportunidades levantadas en vivo · GardenFood</p>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <p class="section-title">Ranking de vendedores</p>
+  <div class="ranking" id="ranking"></div>
+
+  <p class="section-title">Últimos deals ALTO interés</p>
+  <div class="deals" id="deals"></div>
+</div>
+
+<div class="celebracion" id="celebracion">
+  <div class="titulo">🎉 ¡Nueva oportunidad ALTO!</div>
+  <div class="detalle" id="celebDetalle"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  var CLAVE_ACCESO = 'foodservice2026';
+
+  function entrar() {
+    var v = document.getElementById('clave').value;
+    if (v === CLAVE_ACCESO) {
+      sessionStorage.setItem('gf_pantalla_ok', '1');
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('contenido').style.display = 'block';
+      iniciar();
+    } else {
+      document.getElementById('err').style.display = 'block';
+    }
+  }
+  if (sessionStorage.getItem('gf_pantalla_ok') === '1') {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+  }
+
+  var SB_URL = 'https://wnnwgcatjsbcqekktvmy.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndubndnY2F0anNiY3Fla2t0dm15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODA5OTksImV4cCI6MjEwMzI1Njk5OX0.BKpREaJdjv4V9kMZVfCAw4I4GAEX2aUYeZQtULlVzmw';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var idsVistos = null;
+
+  function cargar() {
+    sb.from('meeting_notes').select('id,vendedor,cliente,razon_social,nombre_fantasia,importancia,creado_en,meeting_items(monto_mensual)')
+      .eq('estado', 'finalizada')
+      .order('creado_en', { ascending: false }).then(function(res) {
+        if (res.error) { console.error(res.error); return; }
+        var data = res.data || [];
+        renderStats(data);
+        renderRanking(data);
+        renderDeals(data);
+        detectarNuevos(data);
+      });
+  }
+
+  function esHoy(fechaStr) {
+    var d = new Date(fechaStr);
+    var hoy = new Date();
+    return d.toDateString() === hoy.toDateString();
+  }
+
+  function renderStats(data) {
+    var hoy = data.filter(function(n){ return esHoy(n.creado_en); });
+    var altos = data.filter(function(n){ return n.importancia === 'alto'; });
+    var montoTotal = 0;
+    data.forEach(function(n){ (n.meeting_items||[]).forEach(function(it){ montoTotal += Number(it.monto_mensual)||0; }); });
+    document.getElementById('stats').innerHTML =
+      '<div class="stat"><div class="num">' + hoy.length + '</div><div class="lbl">Oportunidades hoy</div></div>' +
+      '<div class="stat"><div class="num">' + data.length + '</div><div class="lbl">Total feria</div></div>' +
+      '<div class="stat"><div class="num">' + altos.length + '</div><div class="lbl">Deals ALTO</div></div>' +
+      '<div class="stat"><div class="num">$' + (montoTotal/1000000).toFixed(1) + 'M</div><div class="lbl">Potencial mensual</div></div>';
+  }
+
+  function renderRanking(data) {
+    var porVendedor = {};
+    data.forEach(function(n) {
+      var v = n.vendedor || 'Sin nombre';
+      if (!porVendedor[v]) porVendedor[v] = { total: 0, altos: 0 };
+      porVendedor[v].total++;
+      if (n.importancia === 'alto') porVendedor[v].altos++;
+    });
+    var lista = Object.keys(porVendedor).map(function(v){ return { vendedor: v, total: porVendedor[v].total, altos: porVendedor[v].altos }; });
+    lista.sort(function(a,b){ return b.total - a.total || b.altos - a.altos; });
+
+    var el = document.getElementById('ranking');
+    if (lista.length === 0) { el.innerHTML = '<div class="empty">Aún no hay reuniones registradas.</div>'; return; }
+    el.innerHTML = lista.map(function(r, i) {
+      return '<div class="rank-row">' +
+        '<div class="rank-pos">' + (i+1) + '</div>' +
+        '<div class="rank-name">' + r.vendedor + '<div class="rank-detail">' + r.altos + ' de interés ALTO</div></div>' +
+        '<div class="rank-count">' + r.total + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderDeals(data) {
+    var altos = data.filter(function(n){ return n.importancia === 'alto'; }).slice(0, 8);
+    var el = document.getElementById('deals');
+    if (altos.length === 0) { el.innerHTML = '<div class="empty">Todavía no hay deals de interés ALTO.</div>'; return; }
+    el.innerHTML = altos.map(function(n) {
+      var monto = 0;
+      (n.meeting_items||[]).forEach(function(it){ monto += Number(it.monto_mensual)||0; });
+      var empresa = n.nombre_fantasia || n.razon_social || '';
+      return '<div class="deal-row">' +
+        '<span class="deal-badge">ALTO</span>' +
+        '<div class="deal-info"><strong>' + n.cliente + '</strong><span>' + empresa + ' · ' + (n.vendedor||'') + '</span></div>' +
+        '<div class="deal-monto">$' + monto.toLocaleString('es-CL') + '/mes</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function detectarNuevos(data) {
+    var idsAltos = data.filter(function(n){ return n.importancia === 'alto'; }).map(function(n){ return n.id; });
+    if (idsVistos === null) { idsVistos = new Set(idsAltos); return; }
+    var nuevos = idsAltos.filter(function(id){ return !idsVistos.has(id); });
+    if (nuevos.length > 0) {
+      var n = data.find(function(x){ return x.id === nuevos[0]; });
+      celebrar(n);
+    }
+    idsVistos = new Set(idsAltos);
+  }
+
+  function celebrar(n) {
+    var empresa = n.nombre_fantasia || n.razon_social || '';
+    document.getElementById('celebDetalle').textContent = n.cliente + ' (' + empresa + ') — ' + (n.vendedor || '');
+    var el = document.getElementById('celebracion');
+    el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 5000);
+  }
+
+  function iniciar() {
+    cargar();
+    setInterval(cargar, 10000);
+  }
+  if (sessionStorage.getItem('gf_pantalla_ok') === '1') iniciar();
+</script>
+</body>
+</html>
